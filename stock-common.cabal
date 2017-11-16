@@ -16,9 +16,13 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
+                     , DB.Psql
                      , Types.Tick
+                     , Types.Tick.Psql
                      , Types.Stock
+                     , Types.Stock.Psql
                      , Types.Exchange
+                     , Types.Exchange.Psql
   build-depends:       base >= 4.7 && < 5
                      , time
                      , opaleye
@@ -27,7 +31,9 @@ library
                      , containers
                      , product-profunctors
                      , uuid
-                     , aeson                     
+                     , aeson
+                     , yaml-config >= 0.4.0
+                                          
   default-language:    Haskell2010
 
 source-repository head
