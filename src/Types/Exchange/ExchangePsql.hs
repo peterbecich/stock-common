@@ -3,7 +3,7 @@ module Types.Exchange.Psql where
 
 import           Prelude
 
-import           Data.Profunctor.Product (p2)
+import           Data.Profunctor.Product (p3)
 import           Data.Profunctor.Product.Default (def)
 import           Opaleye (Column, Table(Table),
                           required, optional, (.==), (.<),
@@ -28,12 +28,24 @@ import qualified Opaleye.Table as T
 
 import Types.Exchange
 
-exchangeTable :: String
-exchangeTable = "create table if not exists exchanges"
+exchangeTableStr :: String
+exchangeTableStr = "create table if not exists exchanges"
        <> " ( name text not null primary key"
        <> ", timeZone text not null"
        <> ", timeZoneOffset int4 not null"
        <> " );"
+
+exchangeTable :: Table
+                 ((Column P.PGText
+                  , Column P.PGText
+                  , Column P.PGInt4 ))
+                 ((Column P.PGText
+                  , Column P.PGText
+                  , Column P.PGInt4 ))
+exchangeTable = T.Table "exchanges" (p3 ( required "name"
+                                        , required "timeZone"
+                                        , required "timeZoneOffset" ))
+
 
 exchangeToPsql :: Exchange -> (Column P.PGText, Column P.PGText, Column P.PGInt4)
 exchangeToPsql (Exchange exchangeName timeZone) =
@@ -42,3 +54,7 @@ exchangeToPsql (Exchange exchangeName timeZone) =
       tzOffset = read $ timeZoneOffsetString timeZone
   in (P.pgString exchangeName, P.pgString tzName, P.pgInt4 tzOffset)
 
+
+insertExchange :: Exchange -> Connection -> IO Int64
+insertExchange exchange connection =
+  runInsert connection exchangeTable (exchangeToPsql exchange)

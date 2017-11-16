@@ -3,7 +3,7 @@ module Types.Stock.Psql where
 
 import           Prelude
 
-import           Data.Profunctor.Product (p2)
+import           Data.Profunctor.Product (p4)
 import           Data.Profunctor.Product.Default (def)
 import           Opaleye (Column, Table(Table),
                           required, optional, (.==), (.<),
@@ -30,13 +30,22 @@ import Types.Stock
 import Types.Exchange
 
 -- TODO foreign key
-stocksTable :: String
-stocksTable = "create table if not exists stocks"
+stocksTableStr :: String
+stocksTableStr = "create table if not exists stocks"
        <> " ( stockId uuid not null primary key"
        <> " , symbol text not null"
        <> " , description text not null"
        <> " , exchange text not null"
        <> " );"
+
+stocksTable :: Table
+               ((Column P.PGUuid, Column P.PGText, Column P.PGText, Column P.PGText))
+               ((Column P.PGUuid, Column P.PGText, Column P.PGText, Column P.PGText))
+stocksTable = T.Table "stocks" (p4 ( required "stockId"
+                          , required "symbol"
+                          , required "description"
+                          , required "exchange"
+                          ))
 
 
 stockToPsql :: Stock -> (Column P.PGUuid, Column P.PGText, Column P.PGText, Column P.PGText)
@@ -44,5 +53,6 @@ stockToPsql (Stock stockId symbol description (Exchange exchangeName _)) =
   (P.pgUUID stockId, P.pgString symbol, P.pgString description, P.pgString exchangeName)
 
 insertStock :: Stock -> Connection -> IO Int64
-insertStock stock connection = undefined
+insertStock stock connection =
+  runInsert connection stocksTable (stockToPsql stock)
 
