@@ -19,6 +19,7 @@ library
                      , DB.Psql
                      , Types.Tick
                      , Types.Tick.Psql
+                     , Types.Tick.JSON
                      , Types.Stock
                      , Types.Stock.Psql
                      , Types.Exchange

@@ -26,6 +26,10 @@ import qualified Opaleye.Internal.Unpackspec as U
 import qualified Opaleye.PGTypes as P
 import qualified Opaleye.Table as T
 
+import Data.UUID
+
+import Types.Exchange.Psql (nasdaq)
+
 import Types.Stock
 import Types.Exchange
 
@@ -35,13 +39,13 @@ stocksTableStr = "create table if not exists stocks"
        <> " ( stockId uuid not null primary key"
        <> " , symbol text not null"
        <> " , description text not null"
-       <> " , exchange text not null"
+       <> " , exchange text not null references exchanges (name)"
        <> " );"
 
 stocksTable :: Table
                ((Column P.PGUuid, Column P.PGText, Column P.PGText, Column P.PGText))
                ((Column P.PGUuid, Column P.PGText, Column P.PGText, Column P.PGText))
-stocksTable = T.Table "stocks" (p4 ( required "stockId"
+stocksTable = T.Table "stocks" (p4 ( required "stockid"
                           , required "symbol"
                           , required "description"
                           , required "exchange"
@@ -55,4 +59,10 @@ stockToPsql (Stock stockId symbol description (Exchange exchangeName _)) =
 insertStock :: Stock -> Connection -> IO Int64
 insertStock stock connection =
   runInsert connection stocksTable (stockToPsql stock)
+
+bogusUUID :: UUID
+(Just bogusUUID) = fromString "c2cc10e1-57d6-4b6f-9899-38d972112d8c"
+
+bogusStock = Stock bogusUUID "BOGUS" "fake company" nasdaq
+
 

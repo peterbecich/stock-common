@@ -6,12 +6,12 @@ import Database.PostgreSQL.Simple
 
 import qualified Data.Yaml.Config as Config
 
-getPsqlConnection :: IO Connection
-getPsqlConnection = do
-  let
-    path :: FilePath
-    path = "conf/collector.yaml"
-  config <- Config.load path
+commonFilePath :: FilePath
+commonFilePath = "conf/common.yaml"
+
+getPsqlConnection :: FilePath -> IO Connection
+getPsqlConnection filePath = do
+  config <- Config.load filePath
   db <- Config.subconfig "db" config
   postgres <- Config.subconfig "postgres" db
   dbname <- Config.lookup "dbname" postgres

@@ -15,7 +15,9 @@ import Data.Functor ((<$>), fmap)
 import Data.Int (Int64)
 import Data.Map (Map, empty, size, mapKeys, toList, assocs)
 import Data.Monoid
+
 import Data.Time.LocalTime
+
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.Internal (Connection)
 import Opaleye.Manipulation
@@ -43,8 +45,8 @@ exchangeTable :: Table
                   , Column P.PGText
                   , Column P.PGInt4 ))
 exchangeTable = T.Table "exchanges" (p3 ( required "name"
-                                        , required "timeZone"
-                                        , required "timeZoneOffset" ))
+                                        , required "timezone"
+                                        , required "timezoneoffset" ))
 
 
 exchangeToPsql :: Exchange -> (Column P.PGText, Column P.PGText, Column P.PGInt4)
@@ -58,3 +60,9 @@ exchangeToPsql (Exchange exchangeName timeZone) =
 insertExchange :: Exchange -> Connection -> IO Int64
 insertExchange exchange connection =
   runInsert connection exchangeTable (exchangeToPsql exchange)
+
+nasdaq = Exchange "NASDAQ" (TimeZone (-300) False "US/Eastern")
+nyse = Exchange "NYSE" (TimeZone (-300) False "US/Eastern")
+
+exchanges = [nasdaq, nyse]
+
