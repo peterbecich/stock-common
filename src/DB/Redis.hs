@@ -14,7 +14,7 @@ getRedisConnection :: FilePath -> IO Connection
 getRedisConnection filePath = do
   config <- Config.load filePath
   db <- Config.subconfig "db" config
-  redis <- Config.subconfig "redis" config
+  redis <- Config.subconfig "redis" db
   ip <- Config.lookup "ip" redis
   portStr <- Config.lookup "port" redis
   let
