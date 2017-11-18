@@ -73,10 +73,10 @@ insertStocks :: [Stock] -> Connection -> IO Int64
 insertStocks stocks connection =
   runInsertMany connection stocksTable (stockToPsql <$> stocks)
 
-bogusUUID :: UUID
-(Just bogusUUID) = fromString "c2cc10e1-57d6-4b6f-9899-38d972112d8c"
+-- bogusUUID :: UUID
+-- (Just bogusUUID) = fromString "c2cc10e1-57d6-4b6f-9899-38d972112d8c"
 
-bogusStock = Stock bogusUUID "BOGUS" "fake company" nasdaq
+-- bogusStock = Stock bogusUUID "BOGUS" "fake company" nasdaq
 
 
 getCStocks :: Query (Column P.PGUuid, Column P.PGText, Column P.PGText, Column P.PGText)

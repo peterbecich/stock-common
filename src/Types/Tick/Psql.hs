@@ -34,7 +34,7 @@ import qualified Opaleye.PGTypes as P
 
 import Database.PostgreSQL.Simple.Internal (Connection)
 
-import Types.Stock.Psql (bogusStock)
+-- import Types.Stock.Psql (bogusStock)
 
 import Control.Concurrent (threadDelay)
 
@@ -109,16 +109,16 @@ insertTicks :: [Tick] -> Connection -> IO Int64
 insertTicks ticks connection =
   runInsertMany connection ticksTable (tickToPostgres <$> ticks)
 
-insertThreeBogusTicks :: Connection -> IO ()
-insertThreeBogusTicks connection = do
-  now1 <- getCurrentTime
-  tick1 <- return $ Tick now1 1.0 1.0 1.0 1.0 100 bogusStock
-  threadDelay 1000000
-  now2 <- getCurrentTime
-  tick2 <- return $ Tick now2 2.0 1.0 1.0 1.0 100 bogusStock
-  threadDelay 1000000
-  now3 <- getCurrentTime
-  tick3 <- return $ Tick now3 3.0 1.0 1.0 1.0 100 bogusStock
-  void $ insertTicks [tick1, tick2, tick3] connection
+-- insertThreeBogusTicks :: Connection -> IO ()
+-- insertThreeBogusTicks connection = do
+--   now1 <- getCurrentTime
+--   tick1 <- return $ Tick now1 1.0 1.0 1.0 1.0 100 bogusStock
+--   threadDelay 1000000
+--   now2 <- getCurrentTime
+--   tick2 <- return $ Tick now2 2.0 1.0 1.0 1.0 100 bogusStock
+--   threadDelay 1000000
+--   now3 <- getCurrentTime
+--   tick3 <- return $ Tick now3 3.0 1.0 1.0 1.0 100 bogusStock
+--   void $ insertTicks [tick1, tick2, tick3] connection
 
 
