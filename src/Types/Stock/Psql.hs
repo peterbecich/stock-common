@@ -1,3 +1,9 @@
+{-# LANGUAGE Arrows #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 
 module Types.Stock.Psql where
 
@@ -5,9 +11,9 @@ import           Prelude
 
 import           Data.Profunctor.Product (p4)
 import           Data.Profunctor.Product.Default (def)
-import           Opaleye (Column, Table(Table),
+import           Opaleye (Query, Column, Table(Table),
                           required, optional, (.==), (.<),
-                          PGInt4, PGFloat8)
+                          PGInt4, PGFloat8, runQuery)
 
 import Control.Monad
 import Data.Char
@@ -16,7 +22,7 @@ import Data.Int (Int64)
 import Data.Map (Map, empty, size, mapKeys, toList, assocs)
 import Data.Monoid
 import Data.Time.LocalTime
-import Database.PostgreSQL.Simple
+-- import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.Internal (Connection)
 import Opaleye.Manipulation
 import qualified Data.Text as Text
@@ -32,6 +38,8 @@ import Types.Exchange.Psql (nasdaq)
 
 import Types.Stock
 import Types.Exchange
+
+import DB.Psql
 
 -- TODO foreign key
 stocksTableStr :: String
@@ -51,7 +59,8 @@ stocksTable = T.Table "stocks" (p4 ( required "stockid"
                           , required "exchange"
                           ))
 
-
+-- TODO replace with Opaleye adaptor
+-- see https://github.com/tomjaguarpaw/haskell-opaleye/blob/master/Doc/Tutorial/TutorialBasic.lhs#L135
 stockToPsql :: Stock -> (Column P.PGUuid, Column P.PGText, Column P.PGText, Column P.PGText)
 stockToPsql (Stock stockId symbol description (Exchange exchangeName _)) =
   (P.pgUUID stockId, P.pgString symbol, P.pgString description, P.pgString exchangeName)
@@ -70,3 +79,25 @@ bogusUUID :: UUID
 bogusStock = Stock bogusUUID "BOGUS" "fake company" nasdaq
 
 
+getCStocks :: Query (Column P.PGUuid, Column P.PGText, Column P.PGText, Column P.PGText)
+getCStocks = T.queryTable stocksTable
+
+
+-- TODO don't hardcode NASDAQ!
+getStocks :: Connection -> IO [Stock]
+getStocks conn = do
+  tups <- runQuery conn getCStocks :: IO [(UUID, String, String, String)]
+  let stocks = (\(uid, sym, dsp, _) -> Stock uid sym dsp nasdaq) <$> tups
+  return stocks
+
+getStocksExample :: IO ()
+getStocksExample = do
+  conn <- getPsqlConnection commonFilePath
+  stocks <- getStocks conn
+  mapM_ (putStrLn . show)  (take 16 stocks)
+  closePsqlConnection conn
+
+  
+-- TODO more selective queries
+-- see https://github.com/tomjaguarpaw/haskell-opaleye/blob/master/Doc/Tutorial/TutorialBasic.lhs#L461
+-- https://github.com/tomjaguarpaw/haskell-opaleye/blob/master/Doc/Tutorial/TutorialBasic.lhs#L559
