@@ -17,10 +17,12 @@ library
   hs-source-dirs:      src
   exposed-modules:     Lib
                      , DB.Psql
+                     , DB.Redis
                      , Types.Tick
                      , Types.Tick.Psql
                      , Types.Stock
                      , Types.Stock.Psql
+                     , Types.Stock.Redis
                      , Types.Exchange
                      , Types.Exchange.Psql
   build-depends:       base >= 4.7 && < 5
