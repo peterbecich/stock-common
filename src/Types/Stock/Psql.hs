@@ -37,7 +37,7 @@ import Types.Exchange
 stocksTableStr :: String
 stocksTableStr = "create table if not exists stocks"
        <> " ( stockId uuid not null primary key"
-       <> " , symbol text not null"
+       <> " , symbol text not null unique"
        <> " , description text not null"
        <> " , exchange text not null references exchanges (name)"
        <> " );"
@@ -59,6 +59,10 @@ stockToPsql (Stock stockId symbol description (Exchange exchangeName _)) =
 insertStock :: Stock -> Connection -> IO Int64
 insertStock stock connection =
   runInsert connection stocksTable (stockToPsql stock)
+
+insertStocks :: [Stock] -> Connection -> IO Int64
+insertStocks stocks connection =
+  runInsertMany connection stocksTable (stockToPsql <$> stocks)
 
 bogusUUID :: UUID
 (Just bogusUUID) = fromString "c2cc10e1-57d6-4b6f-9899-38d972112d8c"

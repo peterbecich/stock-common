@@ -23,3 +23,7 @@ getPsqlConnection filePath = do
     connInfo :: ConnectInfo
     connInfo = ConnectInfo ip port user password dbname
   connect connInfo
+
+closePsqlConnection :: Connection -> IO ()
+closePsqlConnection conn = close conn
+  
