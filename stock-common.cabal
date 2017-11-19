@@ -20,6 +20,7 @@ library
                      , DB.Redis
                      , Types.Tick
                      , Types.Tick.Psql
+                     , Types.Tick.JSON
                      , Types.Stock
                      , Types.Stock.Psql
                      , Types.Stock.JSON
