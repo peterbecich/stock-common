@@ -90,12 +90,21 @@ getStocks conn = do
   let stocks = (\(uid, sym, dsp, _) -> Stock uid sym dsp nasdaq) <$> tups
   return stocks
 
-getStocksExample :: IO ()
+getStocksExample :: IO [Stock]
 getStocksExample = do
   conn <- getPsqlConnection commonFilePath
   stocks <- getStocks conn
-  mapM_ (putStrLn . show)  (take 16 stocks)
+  -- mapM_ (putStrLn . show)  (take 16 stocks)
   closePsqlConnection conn
+  return stocks
+
+getNStocksExample :: Int -> IO [Stock]
+getNStocksExample n = do
+  conn <- getPsqlConnection commonFilePath
+  stocks <- getStocks conn
+  -- mapM_ (putStrLn . show)  (take 16 stocks)
+  closePsqlConnection conn
+  return (take n stocks)
 
   
 -- TODO more selective queries
