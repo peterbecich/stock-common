@@ -6,8 +6,9 @@ import Control.Monad
 import Data.Traversable
 import Data.UUID
 import Data.Time.Clock
+import qualified Data.List as L
 
-import Data.ByteString.Char8
+import qualified Data.ByteString.Char8 as BS
 
 import Database.Redis
 
@@ -26,32 +27,39 @@ setTickTimestamp tick = let
   -- sym :: String
   -- sym = symbol $ Tick.stock tick
   uuid = stockId (Tick.stock tick)
-  in set (pack ("mostRecentTick:"++(show uuid))) (pack tickTimeStr)
+  in set (BS.pack ("mostRecentTick:"++(show uuid))) (BS.pack tickTimeStr)
 
--- getLatestTimestamp :: Stock -> m (f (Maybe ByteString))
-getLatestTimestamp stock = let
-  -- sym :: String
-  -- sym = symbol stock
-  uuid = stockId stock
-  in get (pack ("mostRecentTick:"++(show uuid)))
-
---getLatestTimestamp' :: UUID -> m (f (Maybe ByteString))
 getLatestTimestamp' stockId = let
-  -- sym :: String
-  -- sym = symbol stock
   uuid :: UUID
   uuid = stockId -- clunky way to bound type of argument
-  in get (pack ("mostRecentTick:"++(show uuid)))
+  in get (BS.pack ("mostRecentTick:"++(show uuid)))
 
-getLatestTimestamps stocks = 
-  traverse getLatestTimestamp stocks
+getLatestTimestamps :: Redis [(UUID, String)]
+getLatestTimestamps = do
+  -- TODO unsafe!
+  (Right stockIds) <- keys "mostRecentTick:*"
+  (Right timestamps) <- mget stockIds
+  let stockIds' = (BS.drop 15) <$> stockIds
+      (Just timestamps') = sequence timestamps
+      timestamps'' = BS.unpack <$> timestamps'
+      
+      stockIds'' = (\bs -> let mUUID = (fromString . BS.unpack) bs
+                               -- TODO make safe!
+                           in case mUUID of
+                                (Just uuid) -> uuid
+                   ) <$> stockIds'
+        
+  return $ zip stockIds'' timestamps''
 
+-- exampleTimestamps :: IO [(UUID, BS.ByteString)]
+-- exampleTimestamps = do
+--   conn <- getRedisConnection commonFilePath
 
-exampleTimestamps stocks = do
-  conn <- getRedisConnection commonFilePath
-  timestamps <- runRedis conn (getLatestTimestamps stocks)
-  closeRedisConnection conn
-  return timestamps
+--   tups <- runRedis conn getLatestTimestamps
+  
+--   closeRedisConnection conn
+
+--   return tups
 
   
 
