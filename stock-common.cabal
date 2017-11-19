@@ -26,6 +26,7 @@ library
                      , Types.Stock.Redis
                      , Types.Exchange
                      , Types.Exchange.Psql
+                     , Types.Exchange.JSON
   build-depends:       base >= 4.7 && < 5
                      , time
                      , opaleye
