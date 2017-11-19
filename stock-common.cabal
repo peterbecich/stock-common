@@ -22,6 +22,7 @@ library
                      , Types.Tick.Psql
                      , Types.Stock
                      , Types.Stock.Psql
+                     , Types.Stock.JSON
                      , Types.Stock.Redis
                      , Types.Exchange
                      , Types.Exchange.Psql
