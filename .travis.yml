@@ -6,8 +6,6 @@ cache:
   - $HOME/.stack
 
 before_install:
-  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-  - git submodule update --init --recursive
   
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
