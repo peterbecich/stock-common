@@ -13,8 +13,9 @@ import           Data.Profunctor.Product (p4)
 import           Data.Profunctor.Product.Default (def)
 import           Opaleye (Query, Column, Table(Table),
                           required, optional, (.==), (.<),
-                          PGInt4, PGFloat8, runQuery)
+                          PGInt4, PGFloat8, runQuery, restrict)
 
+import Control.Arrow (returnA)
 import Control.Monad
 import Data.Char
 import Data.Functor ((<$>), fmap)
@@ -73,15 +74,17 @@ insertStocks :: [Stock] -> Connection -> IO Int64
 insertStocks stocks connection =
   runInsertMany connection stocksTable (stockToPsql <$> stocks)
 
--- bogusUUID :: UUID
--- (Just bogusUUID) = fromString "c2cc10e1-57d6-4b6f-9899-38d972112d8c"
 
--- bogusStock = Stock bogusUUID "BOGUS" "fake company" nasdaq
+-- https://github.com/tomjaguarpaw/haskell-opaleye/blob/master/Doc/Tutorial/TutorialBasic.lhs#L259
+getCStock :: UUID -> Query (Column P.PGUuid, Column P.PGText, Column P.PGText, Column P.PGText)
+getCStock uuid = proc () -> do
+  row@(uuid', _, _, _) <- getCStocks -< ()
+  restrict -< uuid' .== (P.pgUUID uuid)
 
-
+  returnA -< row
+                  
 getCStocks :: Query (Column P.PGUuid, Column P.PGText, Column P.PGText, Column P.PGText)
 getCStocks = T.queryTable stocksTable
-
 
 -- TODO don't hardcode NASDAQ!
 getStocks :: Connection -> IO [Stock]
@@ -110,3 +113,24 @@ getNStocksExample n = do
 -- TODO more selective queries
 -- see https://github.com/tomjaguarpaw/haskell-opaleye/blob/master/Doc/Tutorial/TutorialBasic.lhs#L461
 -- https://github.com/tomjaguarpaw/haskell-opaleye/blob/master/Doc/Tutorial/TutorialBasic.lhs#L559
+
+
+-- TODO make safe!!
+-- TODO don't hardcode nasdaq!
+getStock :: UUID -> Connection -> IO [Stock]
+getStock uuid conn = do
+  stock <- runQuery conn (getCStock uuid) :: IO [(UUID, String, String, String)]
+  let stock' = (\(stockId, symbol, description, _) -> Stock stockId symbol description nasdaq) <$> stock
+  return stock'
+
+bogusUUID :: UUID
+(Just bogusUUID) = fromString "cb962035-1394-4f87-92e2-d8e57072b185"
+
+getStockExample :: UUID -> IO [Stock]
+getStockExample uuid = do
+  conn <- getPsqlConnection commonFilePath
+  stock <- getStock uuid conn
+  -- mapM_ (putStrLn . show)  (take 16 stocks)
+  closePsqlConnection conn
+  return stock
+
