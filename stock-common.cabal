@@ -24,7 +24,9 @@ library
                      , Types.Stock
                      , Types.Stock.Psql
                      , Types.Stock.JSON
-                     , Types.Stock.Redis
+                     , Types.MostRecentTick
+                     , Types.MostRecentTick.Redis
+                     , Types.MostRecentTick.JSON
                      , Types.Exchange
                      , Types.Exchange.Psql
                      , Types.Exchange.JSON
