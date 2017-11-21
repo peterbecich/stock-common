@@ -8,7 +8,8 @@ import Types.Tick
 import Types.Tick.Psql
 import Types.Stock
 import Types.Stock.Psql
-import Types.Stock.Redis
+import Types.MostRecentTick
+import Types.MostRecentTick.Redis
 import Types.Exchange
 import Types.Exchange.Psql
 
