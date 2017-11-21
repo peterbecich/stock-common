@@ -9,6 +9,8 @@ import Data.UUID
 import Data.Time.Clock
 import qualified Data.List as L
 
+import qualified Data.Map.Lazy as Map
+
 import qualified Data.ByteString.Char8 as BS
 
 import Database.Redis
@@ -26,11 +28,26 @@ setTickTimestamp tick = let
   uuid = Stock.stockId (Tick.stock tick)
   in set (BS.pack ("mostRecentTick:"++(show uuid))) (BS.pack tickTimeStr)
 
+-- TODO improve!!
 --getLatestTimestamp :: (RedisCtx m f) => UUID -> m (f (Maybe BS.ByteString))
-getLatestTimestamp :: UUID -> Redis (Either Reply (Maybe BS.ByteString))
-getLatestTimestamp stockId =
-  get (BS.pack ("mostRecentTick:"++(show stockId)))
+getLatestTimestamp :: UUID -> Redis (Either Reply (Maybe UTCTime))
+getLatestTimestamp stockId = do
+  -- unsafe!!
+  (Right mBS) <- get (BS.pack ("mostRecentTick:"++(show stockId)))
+  let
+    -- unsafe!!
+    bs :: BS.ByteString
+    (Just bs) = mBS
 
+    s :: String
+    s = BS.unpack bs
+    
+    -- unsafe!!
+    utc :: UTCTime
+    utc = read s
+
+  return $ Right $ Just utc
+    
 -- exampleTimestamp :: IO (Either MRT.MostRecentTick)
 exampleTimestamp = do
   conn <- getRedisConnection commonFilePath
@@ -43,45 +60,42 @@ exampleTimestamp = do
   closeRedisConnection conn
 
   return mrt
-  
-getLatestTimestamp' :: UUID -> Redis (Either Reply (Maybe MRT.MostRecentTick))
-getLatestTimestamp' stockId = do
-  eitherMaybeByteString <- getLatestTimestamp stockId
-  let
-    --eitherMString :: (f (Maybe String))
-    eitherMString = (fmap . fmap) (BS.unpack) eitherMaybeByteString
-    
-    --eitherMUTC :: (f (Maybe UTCTime)) -- runtime error here if read fails
-    eitherMUTC = (fmap . fmap) (read) eitherMString
-
-    --eitherMMostRecentTick :: (f (Maybe MRT.MostRecentTick))
-    eitherMMostRecentTick = (fmap . fmap) (\utc -> MRT.MostRecentTick stockId utc) eitherMUTC
-    
-  return eitherMMostRecentTick
 
 
--- TODO Improve
-getLatestTimestamps :: Redis [MRT.MostRecentTick]
+getLatestTimestamps :: Redis (Map.Map UUID UTCTime)
 getLatestTimestamps = do
   -- TODO unsafe!
   (Right stockIds) <- keys "mostRecentTick:*"
   (Right timestamps) <- mget stockIds
-  let stockIds' = (BS.drop 15) <$> stockIds
-      (Just timestamps') = sequence timestamps
-      timestamps'' = BS.unpack <$> timestamps'
-      timestamps''' :: [UTCTime]
-      timestamps''' = read <$> timestamps''
-      
-      stockIds'' = (\bs -> let mUUID = (fromString . BS.unpack) bs
-                               -- TODO make safe!
-                           in case mUUID of
-                                (Just uuid) -> uuid
-                   ) <$> stockIds'
-      mrts = (uncurry MRT.MostRecentTick) <$> (zip stockIds'' timestamps''')
-        
-  return mrts
+  let
+    stockIds' :: [BS.ByteString]
+    stockIds' = (BS.drop 15) <$> stockIds
 
-exampleTimestamps :: IO [MRT.MostRecentTick]
+    stockIds'' :: [UUID]
+    stockIds'' = (\bs -> let mUUID = (fromString . BS.unpack) bs
+                   -- TODO make safe!
+                         in case mUUID of
+                           (Just uuid) -> uuid
+                 ) <$> stockIds'
+    
+
+    timestamps' :: [BS.ByteString]
+    (Just timestamps') = sequence timestamps
+
+    timestamps'' :: [String]
+    timestamps'' = BS.unpack <$> timestamps'
+
+    timestamps''' :: [UTCTime]
+    timestamps''' = read <$> timestamps''
+
+    tups :: [(UUID, UTCTime)]
+    tups = (zip stockIds'' timestamps''')
+
+    
+        
+  return $ Map.fromList tups
+
+exampleTimestamps :: IO (Map.Map UUID UTCTime)
 exampleTimestamps = do
   conn <- getRedisConnection commonFilePath
 
