@@ -4,8 +4,16 @@ module Types.Exchange where
 
 import Data.Time.LocalTime (TimeZone)
 
+import Opaleye (Column)
+import Opaleye.PGTypes
+
 import GHC.Generics
 
-data Exchange = Exchange { name :: String
-                         , timeZone :: TimeZone
-                         } deriving (Generic, Show)
+-- data Exchange' a b c = Exchange' { name :: a
+--                              , timeZone :: b
+--                              , timeZoneOffset :: c
+--                              } deriving (Generic, Show)
+
+-- --type Exchange = Exchange' String TimeZone Int
+-- type Exchange = Exchange' String String Int
+

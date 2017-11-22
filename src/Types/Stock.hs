@@ -14,3 +14,6 @@ data Stock = Stock { stockId :: UUID
                    , description :: String
                    , exchange :: Exchange
                    } deriving (Generic, Show)
+
+-- data Stock a b c
+
