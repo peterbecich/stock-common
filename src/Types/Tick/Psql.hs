@@ -1,6 +1,7 @@
 {-# LANGUAGE Arrows #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -17,6 +18,7 @@ import Data.Int (Int64)
 import Data.Monoid
 import Data.Profunctor.Product (p7)
 import Data.Profunctor.Product.Default (def)
+import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
 import Data.Text (Text)
 import Data.Time (UTCTime, getCurrentTime)
 import Data.Time.LocalTime
@@ -32,15 +34,15 @@ import qualified Opaleye.Table as T
 
 import Types.Tick
 import Types.Stock
+import Types.Stock.Psql
+import Types.Exchange
+import Types.Exchange.Psql
 
 import DB.Psql
 
--- TODO foreign key
-
 ticksTableStr :: String
 ticksTableStr = "create table if not exists ticks"
-  <> " ( time timestamp not null"
-  -- <> ", symbol text not null"
+  <> " ( time timestamptz not null"
   <> ", open float8 not null"
   <> ", high float8 not null"
   <> ", low float8 not null"
@@ -51,111 +53,227 @@ ticksTableStr = "create table if not exists ticks"
   <> ");"
 
 
-type TickColumn = Tick
+type TickColumn = Tick'
                   (Column P.PGTimestamptz)
                   (Column P.PGFloat8)
                   (Column P.PGFloat8)
                   (Column P.PGFloat8)
                   (Column P.PGFloat8)
                   (Column P.PGInt4)
---                  (Column P.PGUuid)
+                  (Column P.PGUuid)
 
-ticksTable :: Table (TickColumn) (TickColumn)
-ticksTable = T.Table "ticks" (p7 ( required "time"
-                                 , required "open"
-                                 , required "high"
-                                 , required "low"
-                                 , required "close"
-                                 , required "volume"
-                                 , required "stockid"
-                                 ))
+type TickColumn2 = Tick'
+                  (Column P.PGTimestamptz)
+                  (Column P.PGFloat8)
+                  (Column P.PGFloat8)
+                  (Column P.PGFloat8)
+                  (Column P.PGFloat8)
+                  (Column P.PGInt4)
+                  (Column StockColumn)
+
+-- tick timestamp
+-- open
+-- high
+-- low
+-- close
+-- volume
+-- (stock id, stock symbol, stock description, exchange name)
+type TickColumn3 = Tick'
+                  (Column P.PGTimestamptz)
+                  (Column P.PGFloat8)
+                  (Column P.PGFloat8)
+                  (Column P.PGFloat8)
+                  (Column P.PGFloat8)
+                  (Column P.PGInt4)
+                  ((Column P.PGUuid), (Column P.PGText), (Column P.PGText), (Column P.PGText))
+
+-- tick timestamp
+-- open
+-- high
+-- low
+-- close
+-- volume
+-- (stock id, stock symbol, stock description, (exchange name, exchange time zone, tz offset))
+type TickColumn4 = Tick'
+                  (Column P.PGTimestamptz)
+                  (Column P.PGFloat8)
+                  (Column P.PGFloat8)
+                  (Column P.PGFloat8)
+                  (Column P.PGFloat8)
+                  (Column P.PGInt4)
+                  ((Column P.PGUuid)
+                  , (Column P.PGText)
+                  , (Column P.PGText)
+                  , ((Column P.PGText)
+                    , (Column P.PGText)
+                    , (Column P.PGInt4)
+                    )
+                  )
+
+$(makeAdaptorAndInstance "pTick" ''Tick')
+
+tickTable :: Table TickColumn TickColumn
+tickTable = T.Table "ticks" (pTick Tick' { time = required "time"
+                                          , open = required "open"
+                                          , high = required "high"
+                                          , low = required "low"
+                                          , close = required "close"
+                                          , volume = required "volume"
+                                          , stock = required "stockid"
+                                          })
+
+tickColumnQuery :: Query TickColumn
+tickColumnQuery = T.queryTable tickTable
+
+applyStockAndExchange :: TickColumn4
+                      -> (Tick'
+                          (Column P.PGTimestamptz)
+                          (Column P.PGFloat8)
+                          (Column P.PGFloat8)
+                          (Column P.PGFloat8)
+                          (Column P.PGFloat8)
+                          (Column P.PGInt4)
+                          (Stock'
+                           (Column P.PGUuid)
+                           (Column P.PGText)
+                           (Column P.PGText)
+                           ExchangeColumn
+                          )
+                         )
+applyStockAndExchange (Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC
+                       (stockIdC, stockSymbolC, stockDescriptionC, exchangeC)
+                      ) = let
+  stock :: (Stock'
+             (Column P.PGUuid)
+             (Column P.PGText)
+             (Column P.PGText)
+             (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4)))
+  stock = applyExchange' (Stock' stockIdC stockSymbolC stockDescriptionC exchangeC)
+  in Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC stock
 
 
--- tickToPostgres :: Tick
---                ->  (Column P.PGTimestamptz
---                    , Column P.PGFloat8
---                    , Column P.PGFloat8
---                    , Column P.PGFloat8
---                    , Column P.PGFloat8
---                    , Column P.PGInt4
---                    , Column P.PGUuid)
--- tickToPostgres (Tick utc open high low close volume (Stock stockId _ _ _)) = let
---   in ( P.pgUTCTime utc
---      , P.pgDouble open
---      , P.pgDouble high
---      , P.pgDouble low
---      , P.pgDouble close
---      , P.pgInt4 volume
---      , P.pgUUID stockId
---      )
+tickQuery :: Query (Tick'
+                   (Column P.PGTimestamptz)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGInt4)
+                   (Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText)
+                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
+                   )
+                   )
+tickQuery = proc () -> do
+  tickRow@(Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC stockIdC) <- tickColumnQuery -< ()
+  stockRow@(Stock' stockIdC' symbolC descriptionC exchangeNameC) <- stockColumnQuery -< ()
+  exchangeRow@(Exchange' exchangeNameC' exchangeTimeZoneC exchangeTimeZoneOffsetC) <- exchangeQuery -< ()
+  restrict -< stockIdC .== stockIdC'
+  restrict -< exchangeNameC .== exchangeNameC'
+
+  let
+    intermediate :: Tick'
+                   (Column P.PGTimestamptz)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGInt4)
+                   ((Column P.PGUuid), (Column P.PGText), (Column P.PGText),
+                    ((Column P.PGText), (Column P.PGText), (Column P.PGInt4))
+                   )
+    intermediate = Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC (stockIdC, symbolC, descriptionC, (exchangeNameC, exchangeTimeZoneC, exchangeTimeZoneOffsetC))
+
+  returnA -< applyStockAndExchange intermediate
+  
+
+tickExample :: IO [Tick]
+tickExample = do
+  conn <- getPsqlConnection commonFilePath
+  ticks <- runQuery conn tickQuery
+  closePsqlConnection conn
+  return (take 10 ticks)
+                   
+printTicks = tickExample >>= mapM_ (putStrLn . show)
+
+
+tickToPostgres :: Tick -> TickColumn
+tickToPostgres (Tick' utc open high low close volume (Stock' stockId _ _ _)) = let
+  in Tick'
+     (P.pgUTCTime utc)
+     (P.pgDouble open)
+     (P.pgDouble high)
+     (P.pgDouble low)
+     (P.pgDouble close)
+     (P.pgInt4 volume)
+     (P.pgUUID stockId)
 
 insertTick :: Tick -> Connection -> IO Int64
 insertTick tick connection =
-  runInsertMany connection ticksTable [(tickToPostgres tick)]
+  runInsert connection tickTable (tickToPostgres tick)
 
 insertTicks :: [Tick] -> Connection -> IO Int64
 insertTicks ticks connection =
-  runInsertMany connection ticksTable (tickToPostgres <$> ticks)
+  runInsertMany connection tickTable (tickToPostgres <$> ticks)
 
 -- Eventual solution to inserting duplicate ticks
 -- https://www.postgresql.org/docs/current/static/sql-insert.html
 -- https://github.com/tomjaguarpaw/haskell-opaleye/issues/139
 
-bogusUUID :: UUID
-(Just bogusUUID) = fromString "6500a7a7-b839-4591-9c79-f908d6c46386"
+-- bogusUUID :: UUID
+-- (Just bogusUUID) = fromString "6500a7a7-b839-4591-9c79-f908d6c46386"
 
-getCTicks :: Query (Column P.PGTimestamptz
-                    , Column P.PGFloat8
-                    , Column P.PGFloat8
-                    , Column P.PGFloat8
-                    , Column P.PGFloat8
-                    , Column P.PGInt4
-                    , Column P.PGUuid)
-getCTicks = T.queryTable ticksTable
+-- getCTicks :: Query (Column P.PGTimestamptz
+--                     , Column P.PGFloat8
+--                     , Column P.PGFloat8
+--                     , Column P.PGFloat8
+--                     , Column P.PGFloat8
+--                     , Column P.PGInt4
+--                     , Column P.PGUuid)
+-- getCTicks = T.queryTable ticksTable
 
-getTicks :: Connection
-         -> IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
-getTicks conn = do
-  ticks <- runQuery conn getCTicks :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
-  return ticks
+-- getTicks :: Connection
+--          -> IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
+-- getTicks conn = do
+--   ticks <- runQuery conn getCTicks :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
+--   return ticks
 
-getTicksExample :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
-getTicksExample = do
-  conn <- getPsqlConnection commonFilePath
-  ticks <- getTicks conn
-  closePsqlConnection conn
-  return ticks
-
-
-getCMostRecentTick :: UUID
-                   -> Query (Column P.PGTimestamptz
-                            , Column P.PGFloat8
-                            , Column P.PGFloat8
-                            , Column P.PGFloat8
-                            , Column P.PGFloat8
-                            , Column P.PGInt4
-                            , Column P.PGUuid)
-getCMostRecentTick stockId = proc () -> do
-  row@(_, _, _, _, _, _, stockId') <- getCTicks -< ()
-  restrict -< stockId' .== (P.pgUUID stockId)
-
-  returnA -< row
+-- getTicksExample :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
+-- getTicksExample = do
+--   conn <- getPsqlConnection commonFilePath
+--   ticks <- getTicks conn
+--   closePsqlConnection conn
+--   return ticks
 
 
--- use bogus stock here...
-getMostRecentTicks :: UUID
-                   -> Connection
-                   -> IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
-getMostRecentTicks stockId conn = do
-  ticks <- runQuery conn (getCMostRecentTick stockId) :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
-  return ticks
+-- getCMostRecentTick :: UUID
+--                    -> Query (Column P.PGTimestamptz
+--                             , Column P.PGFloat8
+--                             , Column P.PGFloat8
+--                             , Column P.PGFloat8
+--                             , Column P.PGFloat8
+--                             , Column P.PGInt4
+--                             , Column P.PGUuid)
+-- getCMostRecentTick stockId = proc () -> do
+--   row@(_, _, _, _, _, _, stockId') <- getCTicks -< ()
+--   restrict -< stockId' .== (P.pgUUID stockId)
 
-getMostRecentTickExample :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
-getMostRecentTickExample = do
-  conn <- getPsqlConnection commonFilePath
-  ticks <- getMostRecentTicks bogusUUID conn
-  closePsqlConnection conn
-  return ticks
+--   returnA -< row
+
+
+-- -- use bogus stock here...
+-- getMostRecentTicks :: UUID
+--                    -> Connection
+--                    -> IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
+-- getMostRecentTicks stockId conn = do
+--   ticks <- runQuery conn (getCMostRecentTick stockId) :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
+--   return ticks
+
+-- getMostRecentTickExample :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
+-- getMostRecentTickExample = do
+--   conn <- getPsqlConnection commonFilePath
+--   ticks <- getMostRecentTicks bogusUUID conn
+--   closePsqlConnection conn
+--   return ticks
 
 -- insertTicksSafe :: [Tick] -> Connection -> IO Int64
 -- insertTicksSafe (tick : ticks) conn = do
