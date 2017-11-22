@@ -40,7 +40,7 @@ getSymbols = do
       -- forM_ v $  \ (tk, dsp :: String) -> putStrLn $ tk ++ ": " ++ dsp
       V.toList <$> (forM v $ \ ( tk, dsp :: String) -> do
         ruuid <- randomIO :: IO UUID
-        return $ Stock ruuid tk dsp nasdaq)
+        return $ Stock' ruuid tk dsp nasdaq)
 
 getSymbolsAndInsert :: IO Int64
 getSymbolsAndInsert = do

@@ -30,7 +30,7 @@ instance FromJSON (UTCTime -> Stock -> Tick) where
     low <- read <$> tick .: "3. low"
     close <- read <$> tick .: "4. close"
     volume <- read <$> tick .: "5. volume"
-    return $ (\timestamp stock -> Tick timestamp open high low close volume stock)
+    return $ (\timestamp stock -> Tick' timestamp open high low close volume stock)
 
 ticksParser :: Object -> Parser (Mp.Map LocalTime (UTCTime -> Stock -> Tick))
 ticksParser wholeObject = wholeObject .: "Time Series (1min)"
