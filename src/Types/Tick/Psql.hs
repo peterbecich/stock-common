@@ -186,6 +186,18 @@ tickQuery = proc () -> do
   returnA -< applyStockAndExchange intermediate
   
 
+recentTickQuery :: Query (Tick'
+                   (Column P.PGTimestamptz)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGInt4)
+                   (Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText)
+                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
+                   )
+                   )
+
 tickExample :: IO [Tick]
 tickExample = do
   conn <- getPsqlConnection commonFilePath
@@ -194,6 +206,17 @@ tickExample = do
   return (take 10 ticks)
                    
 printTicks = tickExample >>= mapM_ (putStrLn . show)
+
+recentTickQuery = orderBy (desc (\(Tick' ts _ _ _ _ _ _) -> ts)) tickQuery
+
+recentTickExample :: IO [Tick]
+recentTickExample = do
+  conn <- getPsqlConnection commonFilePath
+  ticks <- runQuery conn recentTickQuery
+  closePsqlConnection conn
+  return (take 100 ticks)
+                   
+printRecentTicks = recentTickExample >>= mapM_ (putStrLn . show)
 
 
 tickToPostgres :: Tick -> TickColumn
@@ -221,61 +244,4 @@ insertTicks ticks connection =
 
 -- bogusUUID :: UUID
 -- (Just bogusUUID) = fromString "6500a7a7-b839-4591-9c79-f908d6c46386"
-
--- getCTicks :: Query (Column P.PGTimestamptz
---                     , Column P.PGFloat8
---                     , Column P.PGFloat8
---                     , Column P.PGFloat8
---                     , Column P.PGFloat8
---                     , Column P.PGInt4
---                     , Column P.PGUuid)
--- getCTicks = T.queryTable ticksTable
-
--- getTicks :: Connection
---          -> IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
--- getTicks conn = do
---   ticks <- runQuery conn getCTicks :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
---   return ticks
-
--- getTicksExample :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
--- getTicksExample = do
---   conn <- getPsqlConnection commonFilePath
---   ticks <- getTicks conn
---   closePsqlConnection conn
---   return ticks
-
-
--- getCMostRecentTick :: UUID
---                    -> Query (Column P.PGTimestamptz
---                             , Column P.PGFloat8
---                             , Column P.PGFloat8
---                             , Column P.PGFloat8
---                             , Column P.PGFloat8
---                             , Column P.PGInt4
---                             , Column P.PGUuid)
--- getCMostRecentTick stockId = proc () -> do
---   row@(_, _, _, _, _, _, stockId') <- getCTicks -< ()
---   restrict -< stockId' .== (P.pgUUID stockId)
-
---   returnA -< row
-
-
--- -- use bogus stock here...
--- getMostRecentTicks :: UUID
---                    -> Connection
---                    -> IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
--- getMostRecentTicks stockId conn = do
---   ticks <- runQuery conn (getCMostRecentTick stockId) :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
---   return ticks
-
--- getMostRecentTickExample :: IO [(UTCTime, Double, Double, Double, Double, Int, UUID)]
--- getMostRecentTickExample = do
---   conn <- getPsqlConnection commonFilePath
---   ticks <- getMostRecentTicks bogusUUID conn
---   closePsqlConnection conn
---   return ticks
-
--- insertTicksSafe :: [Tick] -> Connection -> IO Int64
--- insertTicksSafe (tick : ticks) conn = do
---   mLatest <- 
 
