@@ -24,6 +24,7 @@ import Data.Time.LocalTime
 import Data.UUID
 import Database.PostgreSQL.Simple.Internal (Connection)
 import Opaleye.Manipulation
+import Opaleye.Internal.RunQuery
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified Opaleye.Constant as C
@@ -51,24 +52,80 @@ stocksTableStr = "create table if not exists stocks"
 
 type StockColumn = Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText) (Column P.PGText)
 
+type StockColumn2 = Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText) (Column ExchangeColumn)
+
+-- stock id, stock symbol, stock description, (exchange name, exchange timezone, exchange offset)
+type StockColumn3 = Stock'
+                    (Column P.PGUuid)
+                    (Column P.PGText)
+                    (Column P.PGText)
+                    ((Column P.PGText), (Column P.PGText), (Column P.PGInt4))
+
 $(makeAdaptorAndInstance "pStock" ''Stock')
 
 stockTable :: Table StockColumn StockColumn
-stockTable = T.Table "stocks" (pStock Stock' { stockId = required "stockId"
-                                              , symbol = required "symbol"
-                                              , description = required "description"
-                                              , exchange = required "exchange"
-                                              })
+stockTable = T.Table "stocks" (pStock Stock' { stockId = required "stockid"
+                                             , symbol = required "symbol"
+                                             , description = required "description"
+                                             , exchange = required "exchange"
+                                             })
 
-stockQuery :: Query StockColumn
-stockQuery = T.queryTable stockTable
+stockColumnQuery :: Query StockColumn
+stockColumnQuery = T.queryTable stockTable
 
--- stockExample :: IO [Stock]
--- stockExample = do
+
+--applyExchange' :: StockColumn3 -> StockColumn2
+applyExchange' (Stock' stockIdC stockSymbolC stockDescriptionC (exchangeNameC, exchangeTimeZoneC, exchangeTimeZoneOffsetC)) =
+  Stock' stockIdC stockSymbolC stockDescriptionC (Exchange' exchangeNameC exchangeTimeZoneC exchangeTimeZoneOffsetC)
+
+-- https://www.stackage.org/haddock/lts-9.10/opaleye-0.5.4.0/Opaleye-Internal-RunQuery.html
+-- need subquery here to retrieve exchange!
+--stockQuery :: Query StockColumn3
+stockQuery = proc () -> do
+  stockRow@(Stock' stockIdC symbolC descriptionC exchangeNameC) <- stockColumnQuery -< ()
+  let ex = exchange stockRow
+  exchangeRow@(Exchange' exchangeNameC' exchangeTimeZoneC exchangeTimeZoneOffsetC) <- exchangeQuery -< ()
+  restrict -< exchangeNameC' .== exchangeNameC
+  let intermediate = Stock' stockIdC symbolC descriptionC (exchangeNameC, exchangeTimeZoneC, exchangeTimeZoneOffsetC)
+  
+  returnA -< applyExchange' intermediate
+
+
+queryRunnerColumnString = queryRunnerColumnDefault :: QueryRunnerColumn P.PGText String
+queryRunnerColumnInt = queryRunnerColumnDefault :: QueryRunnerColumn P.PGInt4 Int
+-- queryRunnerTup :: QueryRunnerColumn (P.PGText, P.PGText, P.PGInt4) Exchange = queryRunnerColumnDefault
+
+--stockExample :: IO [Stock' UUID String String (String, String, Int)]
+stockExample :: IO [Stock' UUID String String Exchange]
+stockExample = do
+  conn <- getPsqlConnection commonFilePath
+  stocks <- runQuery conn stockQuery
+  closePsqlConnection conn
+  return (take 10 stocks)
+
+printStocks = stockExample >>= mapM_ (putStrLn . show)
+
+-- stockExample2 :: IO [Stock]
+-- stockExample2 = do
 --   conn <- getPsqlConnection commonFilePath
 --   stocks <- runQuery conn stockQuery
 --   closePsqlConnection conn
---   return stocks
+--   return (take 10 stocks)
+
+-- printStocks2 = stockExample2 >>= mapM_ (putStrLn . show)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 stockToPsql :: Stock -> StockColumn
 stockToPsql stock = Stock'

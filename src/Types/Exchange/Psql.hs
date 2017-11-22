@@ -65,6 +65,21 @@ exchangeTable = T.Table "exchanges" (pExchange Exchange' { name = required "name
 exchangeQuery :: Query ExchangeColumn
 exchangeQuery = T.queryTable exchangeTable
 
+exchangeNameQuery :: String -> Query ExchangeColumn
+exchangeNameQuery exchangeName = proc () -> do
+  row@(Exchange' name _ _) <- exchangeQuery -< ()
+  restrict -< name .== (P.pgString exchangeName)
+
+  returnA -< row
+
+exchangeNameQuery' :: (Column P.PGText) -> Query ExchangeColumn
+exchangeNameQuery' exchangeName = proc () -> do
+  row@(Exchange' name _ _) <- exchangeQuery -< ()
+  restrict -< name .== exchangeName
+
+  returnA -< row
+
+
 exchangeExample :: IO [Exchange]
 exchangeExample = do
   conn <- getPsqlConnection commonFilePath

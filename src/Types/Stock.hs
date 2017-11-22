@@ -16,3 +16,9 @@ data Stock' a b c d = Stock' { stockId :: a
 
 type Stock = Stock' UUID String String Exchange
 
+
+applyExchange :: Stock' UUID String String (String, String, Int)
+              -> Stock
+applyExchange (Stock' stockId symbol description (exchangeName, exchangeTimeZone, exchangeTimeZoneOffset)) =
+  Stock' stockId symbol description (Exchange' exchangeName exchangeTimeZone exchangeTimeZoneOffset)
+  
