@@ -112,6 +112,12 @@ stockIdQuery stockId = proc () -> do
   
   returnA -< applyExchange' intermediate
 
+getStock :: UUID -> Connection -> IO [Stock]
+getStock stockId conn = runQuery conn (stockIdQuery stockId)
+
+getStocks :: Connection -> IO [Stock]
+getStocks conn = runQuery conn stockQuery
+
 stockExample :: IO [Stock' UUID String String Exchange]
 stockExample = do
   conn <- getPsqlConnection commonFilePath
