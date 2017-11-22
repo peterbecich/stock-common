@@ -50,60 +50,38 @@ exchangeTableStr = "create table if not exists exchanges"
        <> ", timeZoneOffset int4 not null"
        <> " );"
 
-data Foo' a b c = Foo' { name :: a, timeZone :: b, timeZoneOffset :: c } deriving (Show)
+type ExchangeColumn = Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4)
 
-type FooColumn = Foo' (Column P.PGText) (Column P.PGText) (Column P.PGInt4)
-
-type Bar = Foo' String String Int
-
-$(makeAdaptorAndInstance "pFoo" ''Foo')
+$(makeAdaptorAndInstance "pExchange" ''Exchange')
 
 -- http://haskell.vacationlabs.com/en/latest/docs/opaleye/basic-db-mapping.html
 
-fooTable :: Table FooColumn FooColumn
-fooTable = T.Table "exchanges" (pFoo Foo' { name = required "name"
+exchangeTable :: Table ExchangeColumn ExchangeColumn
+exchangeTable = T.Table "exchanges" (pExchange Exchange' { name = required "name"
                                           , timeZone = required "timezone"
                                           , timeZoneOffset = required "timezoneoffset"
                                           })
 
-fooQuery :: Query FooColumn
-fooQuery = T.queryTable fooTable
+exchangeQuery :: Query ExchangeColumn
+exchangeQuery = T.queryTable exchangeTable
 
-fooExample :: IO [Bar]
-fooExample = do
+exchangeExample :: IO [Exchange]
+exchangeExample = do
   conn <- getPsqlConnection commonFilePath
-  tups <- runQuery conn fooQuery
+  tups <- runQuery conn exchangeQuery
   closePsqlConnection conn
   return tups
 
+exchangeToPsql :: Exchange -> ExchangeColumn
+exchangeToPsql exchange = Exchange'
+                          (P.pgString (name exchange))
+                          (P.pgString (timeZone exchange))
+                          (P.pgInt4 (timeZoneOffset exchange))
 
---type ExchangeColumn = Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4)
 
---exchangeQuery :: Query  (Column P.PGText, Column P.PGText, Column P.PGInt4)
-
--- exchangeQuery :: Query ExchangeColumn
--- exchangeQuery = (\(namec, tzc, tzoc) -> Exchange' namec tzc tzoc) <$> T.queryTable exchangeTable
-
----- $(makeAdaptorAndInstance "pExchange" ''Exchange')
-
--- exchangesExample :: IO [Foo]
--- exchangesExample = do
---   conn <- getPsqlConnection commonFilePath
---   tups <- runQuery conn exchangeQuery
---   closePsqlConnection conn
---   return tups
-
--- insertExchange :: Exchange' a b c -> Connection -> IO Int64
--- insertExchange exchange connection =
---   runInsertMany connection exchangeTable [exchange]
-
---exchangesExample :: IO [(String, String, Int)]
--- exchangesExample :: IO [Exchange]
--- exchangesExample = do
---   conn <- getPsqlConnection commonFilePath
---   tups <- runQuery conn exchangeQuery
---   closePsqlConnection conn
---   return tups
+insertExchange :: Exchange -> Connection -> IO Int64
+insertExchange exchange connection =
+  runInsertMany connection exchangeTable [exchangeToPsql exchange]
 
 -- insertExchange :: Exchange' a b c -> Connection -> IO Int64
 -- insertExchange exchange connection =
@@ -115,5 +93,12 @@ fooExample = do
 -- nyse :: Exchange
 -- nyse = Exchange' "NYSE" (TimeZone (-300) False "US/Eastern") (-300)
 
--- exchanges = [nasdaq, nyse]
+nasdaq :: Exchange
+nasdaq = Exchange' "NASDAQ" "US/Eastern" (-300)
+
+nyse :: Exchange
+nyse = Exchange' "NYSE" "US/Eastern" (-300)
+
+  
+exchanges = [nasdaq, nyse]
 

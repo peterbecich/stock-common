@@ -6,14 +6,13 @@ import GHC.Generics
 
 import Data.UUID (UUID)
 
-import Types.Exchange (Exchange)
+import Types.Exchange
 
+data Stock' a b c d = Stock' { stockId :: a
+                             , symbol :: b
+                             , description :: c
+                             , exchange :: d
+                             } deriving (Generic, Show)
 
-data Stock = Stock { stockId :: UUID
-                   , symbol :: String
-                   , description :: String
-                   , exchange :: Exchange
-                   } deriving (Generic, Show)
-
--- data Stock a b c
+type Stock = Stock' UUID String String Exchange
 
