@@ -16,6 +16,7 @@ import Data.Functor
 import Data.Functor.Identity
 import Data.Int (Int64)
 import Data.Monoid
+import Data.List
 import Data.Profunctor.Product (p7)
 import Data.Profunctor.Product.Default (def)
 import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
@@ -152,6 +153,7 @@ applyStockAndExchange (Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC t
   in Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC stock
 
 
+-- all ticks
 tickQuery :: Query (Tick'
                    (Column P.PGTimestamptz)
                    (Column P.PGFloat8)
@@ -184,8 +186,8 @@ tickQuery = proc () -> do
     intermediate = Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC (stockIdC, symbolC, descriptionC, (exchangeNameC, exchangeTimeZoneC, exchangeTimeZoneOffsetC))
 
   returnA -< applyStockAndExchange intermediate
-  
 
+-- all ticks, ordered by time descending
 recentTickQuery :: Query (Tick'
                    (Column P.PGTimestamptz)
                    (Column P.PGFloat8)
@@ -197,6 +199,7 @@ recentTickQuery :: Query (Tick'
                     (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
                    )
                    )
+recentTickQuery = orderBy (desc (\(Tick' ts _ _ _ _ _ _) -> ts)) tickQuery
 
 tickExample :: IO [Tick]
 tickExample = do
@@ -207,7 +210,6 @@ tickExample = do
                    
 printTicks = tickExample >>= mapM_ (putStrLn . show)
 
-recentTickQuery = orderBy (desc (\(Tick' ts _ _ _ _ _ _) -> ts)) tickQuery
 
 recentTickExample :: IO [Tick]
 recentTickExample = do
@@ -218,6 +220,74 @@ recentTickExample = do
                    
 printRecentTicks = recentTickExample >>= mapM_ (putStrLn . show)
 
+-- all ticks for a given stock
+stockTicksQuery' :: UUID -> Query (Tick'
+                   (Column P.PGTimestamptz)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGInt4)
+                   (Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText)
+                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
+                   )
+                   )
+stockTicksQuery' stockId = proc () -> do
+  tickRow@(Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC (Stock' stockIdC _ _ _)) <- tickQuery -< ()
+  let sid = P.pgUUID stockId
+  restrict -< sid .== stockIdC
+
+  returnA -< tickRow
+
+-- all ticks for a given stock
+stockTicksQuery (Stock' stockId _ _ _) = stockTicksQuery' stockId
+
+
+-- all ticks that match a given stock ID and timestamp
+stockTickQuery' :: UUID -> UTCTime -> Query (Tick'
+                   (Column P.PGTimestamptz)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGInt4)
+                   (Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText)
+                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
+                   )
+                   )
+stockTickQuery' stockId timestamp = proc () -> do
+  tickRow@(Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC (Stock' stockIdC _ _ _)) <- tickQuery -< ()
+  let sid = P.pgUUID stockId
+  restrict -< sid .== stockIdC
+  let ts = P.pgUTCTime timestamp
+  restrict -< ts .== tickTimeC
+  returnA -< tickRow
+
+stockTickQuery (Tick' ts _ _ _ _ _ (Stock' stockId _ _ _)) = stockTickQuery' stockId ts
+
+-- most recent ticks for a given stock
+recentStockTicksQuery' :: UUID -> Query (Tick'
+                   (Column P.PGTimestamptz)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGInt4)
+                   (Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText)
+                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
+                   )
+                   )
+recentStockTicksQuery' stockId =
+  orderBy (desc (\(Tick' ts _ _ _ _ _ _) -> ts)) (stockTicksQuery' stockId)
+
+recentStockTicksQuery (Stock' stockId _ _ _) = recentStockTicksQuery' stockId
+
+-- most recent single tick
+recentStockTickQuery' stockId =
+  limit 1 (recentStockTicksQuery' stockId)
+
+recentStockTickQuery (Stock' stockId _ _ _) =
+  recentStockTicksQuery' stockId
 
 tickToPostgres :: Tick -> TickColumn
 tickToPostgres (Tick' utc open high low close volume (Stock' stockId _ _ _)) = let
@@ -241,6 +311,34 @@ insertTicks ticks connection =
 -- Eventual solution to inserting duplicate ticks
 -- https://www.postgresql.org/docs/current/static/sql-insert.html
 -- https://github.com/tomjaguarpaw/haskell-opaleye/issues/139
+
+-- TODO implement this within single call to `runQuery`??
+-- This implementation only inserts ticks with timestamps more recent
+-- than ticks already in the table, for a given stock
+-- insertTicksSafe :: [Tick] -> Connection -> IO Int64
+-- insertTicksSafe ticks@(t:ts) connection = do
+--   recentTicks <- runQuery connection (recentStockTickQuery (stock t)) :: IO [Tick]
+--   case recentTicks of
+--     (recentTick:recentTicks') ->
+--       let newerTicks = filter (\tick -> (time tick) > (time recentTick)) ticks
+--       in runInsertMany connection tickTable (tickToPostgres <$> newerTicks)      
+--     _ -> runInsertMany connection tickTable (tickToPostgres <$> ticks)      
+
+insertTicksSafe :: [Tick] -> Connection -> IO Int64
+insertTicksSafe ticks connection = sum <$> mapM f ticks
+  where
+    f :: Tick -> IO Int64
+    f tick = do
+      ticks <- runQuery connection (stockTickQuery tick)
+      let
+        mDuplicateTick :: Maybe Tick
+        mDuplicateTick = find (\tick' -> (stockId (stock tick')) == (stockId (stock tick))
+                                         && (time tick') == (time tick)
+                              ) ticks
+      case mDuplicateTick of
+        (Just duplicateTick) -> return 0 -- tick already in DB
+        (Nothing) -> insertTick tick connection
+  
 
 -- bogusUUID :: UUID
 -- (Just bogusUUID) = fromString "6500a7a7-b839-4591-9c79-f908d6c46386"

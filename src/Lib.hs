@@ -21,3 +21,4 @@ import Util.LoadStocks
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
+ 
