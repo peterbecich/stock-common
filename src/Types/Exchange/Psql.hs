@@ -114,6 +114,14 @@ nasdaq = Exchange' "NASDAQ" "US/Eastern" (-300)
 nyse :: Exchange
 nyse = Exchange' "NYSE" "US/Eastern" (-300)
 
+amex :: Exchange
+amex = Exchange' "AMEX" "US/Eastern" (-300)
   
-exchanges = [nasdaq, nyse]
+exchanges = [nasdaq, nyse, amex]
+
+foo :: Exchange -> IO ()
+foo exchange = do
+  conn <- getPsqlConnection commonFilePath
+  rows <- (insertExchange exchange conn)
+  closePsqlConnection conn
 
