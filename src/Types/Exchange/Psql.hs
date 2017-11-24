@@ -119,8 +119,8 @@ amex = Exchange' "AMEX" "US/Eastern" (-300)
   
 exchanges = [nasdaq, nyse, amex]
 
-foo :: Exchange -> IO ()
-foo exchange = do
+insertExchangeIO :: Exchange -> IO ()
+insertExchangeIO exchange = do
   conn <- getPsqlConnection commonFilePath
   rows <- (insertExchange exchange conn)
   closePsqlConnection conn
