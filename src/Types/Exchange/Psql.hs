@@ -90,16 +90,6 @@ insertExchange :: Exchange -> Connection -> IO Int64
 insertExchange exchange connection =
   runInsertMany connection exchangeTable [exchangeToPsql exchange]
 
--- insertExchange :: Exchange' a b c -> Connection -> IO Int64
--- insertExchange exchange connection =
---   runInsertMany connection exchangeTable [exchange]
-
--- nasdaq :: Exchange
--- nasdaq = Exchange' "NASDAQ" (TimeZone (-300) False "US/Eastern") (-300)
-
--- nyse :: Exchange
--- nyse = Exchange' "NYSE" (TimeZone (-300) False "US/Eastern") (-300)
-
 nasdaq :: Exchange
 nasdaq = Exchange' "NASDAQ" "US/Eastern" (-300)
 

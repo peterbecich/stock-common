@@ -63,31 +63,6 @@ type TickColumn = Tick'
                   (Column P.PGInt4)
                   (Column P.PGUuid)
 
-type TickColumn2 = Tick'
-                  (Column P.PGTimestamptz)
-                  (Column P.PGFloat8)
-                  (Column P.PGFloat8)
-                  (Column P.PGFloat8)
-                  (Column P.PGFloat8)
-                  (Column P.PGInt4)
-                  (Column StockColumn)
-
--- tick timestamp
--- open
--- high
--- low
--- close
--- volume
--- (stock id, stock symbol, stock description, exchange name)
-type TickColumn3 = Tick'
-                  (Column P.PGTimestamptz)
-                  (Column P.PGFloat8)
-                  (Column P.PGFloat8)
-                  (Column P.PGFloat8)
-                  (Column P.PGFloat8)
-                  (Column P.PGInt4)
-                  ((Column P.PGUuid), (Column P.PGText), (Column P.PGText), (Column P.PGText))
-
 -- tick timestamp
 -- open
 -- high
@@ -111,6 +86,16 @@ type TickColumn4 = Tick'
                     )
                   )
 
+type TickColumn5 = Tick'
+                   (Column P.PGTimestamptz)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGFloat8)
+                   (Column P.PGInt4)
+                   StockColumn4
+
+
 $(makeAdaptorAndInstance "pTick" ''Tick')
 
 tickTable :: Table TickColumn TickColumn
@@ -127,44 +112,17 @@ tickColumnQuery :: Query TickColumn
 tickColumnQuery = T.queryTable tickTable
 
 applyStockAndExchange :: TickColumn4
-                      -> (Tick'
-                          (Column P.PGTimestamptz)
-                          (Column P.PGFloat8)
-                          (Column P.PGFloat8)
-                          (Column P.PGFloat8)
-                          (Column P.PGFloat8)
-                          (Column P.PGInt4)
-                          (Stock'
-                           (Column P.PGUuid)
-                           (Column P.PGText)
-                           (Column P.PGText)
-                           ExchangeColumn
-                          )
-                         )
+                      -> TickColumn5
 applyStockAndExchange (Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC
                        (stockIdC, stockSymbolC, stockDescriptionC, exchangeC)
                       ) = let
-  stock :: (Stock'
-             (Column P.PGUuid)
-             (Column P.PGText)
-             (Column P.PGText)
-             (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4)))
+  stock :: StockColumn4
   stock = applyExchange' (Stock' stockIdC stockSymbolC stockDescriptionC exchangeC)
   in Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC stock
 
 
 -- all ticks
-tickQuery :: Query (Tick'
-                   (Column P.PGTimestamptz)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGInt4)
-                   (Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText)
-                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
-                   )
-                   )
+tickQuery :: Query TickColumn5
 tickQuery = proc () -> do
   tickRow@(Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC stockIdC) <- tickColumnQuery -< ()
   stockRow@(Stock' stockIdC' symbolC descriptionC exchangeNameC) <- stockColumnQuery -< ()
@@ -173,32 +131,13 @@ tickQuery = proc () -> do
   restrict -< exchangeNameC .== exchangeNameC'
 
   let
-    intermediate :: Tick'
-                   (Column P.PGTimestamptz)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGInt4)
-                   ((Column P.PGUuid), (Column P.PGText), (Column P.PGText),
-                    ((Column P.PGText), (Column P.PGText), (Column P.PGInt4))
-                   )
+    intermediate :: TickColumn4
     intermediate = Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC (stockIdC, symbolC, descriptionC, (exchangeNameC, exchangeTimeZoneC, exchangeTimeZoneOffsetC))
 
   returnA -< applyStockAndExchange intermediate
 
 -- all ticks, ordered by time descending
-recentTickQuery :: Query (Tick'
-                   (Column P.PGTimestamptz)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGInt4)
-                   (Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText)
-                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
-                   )
-                   )
+recentTickQuery :: Query TickColumn5
 recentTickQuery = orderBy (desc (\(Tick' ts _ _ _ _ _ _) -> ts)) tickQuery
 
 tickExample :: IO [Tick]
@@ -221,17 +160,7 @@ recentTickExample = do
 printRecentTicks = recentTickExample >>= mapM_ (putStrLn . show)
 
 -- all ticks for a given stock
-stockTicksQuery' :: UUID -> Query (Tick'
-                   (Column P.PGTimestamptz)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGInt4)
-                   (Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText)
-                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
-                   )
-                   )
+stockTicksQuery' :: UUID -> Query TickColumn5
 stockTicksQuery' stockId = proc () -> do
   tickRow@(Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC (Stock' stockIdC _ _ _)) <- tickQuery -< ()
   let sid = P.pgUUID stockId
@@ -244,17 +173,7 @@ stockTicksQuery (Stock' stockId _ _ _) = stockTicksQuery' stockId
 
 
 -- all ticks that match a given stock ID and timestamp
-stockTickQuery' :: UUID -> UTCTime -> Query (Tick'
-                   (Column P.PGTimestamptz)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGInt4)
-                   (Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText)
-                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
-                   )
-                   )
+stockTickQuery' :: UUID -> UTCTime -> Query TickColumn5
 stockTickQuery' stockId timestamp = proc () -> do
   tickRow@(Tick' tickTimeC tickOpenC tickHighC tickLowC tickCloseC tickVolumeC (Stock' stockIdC _ _ _)) <- tickQuery -< ()
   let sid = P.pgUUID stockId
@@ -263,20 +182,11 @@ stockTickQuery' stockId timestamp = proc () -> do
   restrict -< ts .== tickTimeC
   returnA -< tickRow
 
-stockTickQuery (Tick' ts _ _ _ _ _ (Stock' stockId _ _ _)) = stockTickQuery' stockId ts
+stockTickQuery (Tick' ts _ _ _ _ _ (Stock' stockId _ _ _)) =
+  stockTickQuery' stockId ts
 
 -- most recent ticks for a given stock
-recentStockTicksQuery' :: UUID -> Query (Tick'
-                   (Column P.PGTimestamptz)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGFloat8)
-                   (Column P.PGInt4)
-                   (Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText)
-                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4))
-                   )
-                   )
+recentStockTicksQuery' :: UUID -> Query TickColumn5
 recentStockTicksQuery' stockId =
   orderBy (desc (\(Tick' ts _ _ _ _ _ _) -> ts)) (stockTicksQuery' stockId)
 

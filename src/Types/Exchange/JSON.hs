@@ -18,8 +18,6 @@ import qualified Data.Text as Txt
 import Types.Exchange
 
 instance ToJSON TimeZone where
-  -- toJSON tz = object ["timeZONE" .= (show tz)]
-  -- TODO this JSON object is nested too deep. fix
   toJSON tz = String (Txt.pack (show tz))
 
 instance ToJSON Exchange where

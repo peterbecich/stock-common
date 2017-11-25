@@ -41,7 +41,6 @@ import Types.Exchange.Psql
 
 import DB.Psql
 
--- TODO foreign key
 stocksTableStr :: String
 stocksTableStr = "create table if not exists stocks"
        <> " ( stockId uuid not null primary key"
@@ -52,14 +51,19 @@ stocksTableStr = "create table if not exists stocks"
 
 type StockColumn = Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText) (Column P.PGText)
 
-type StockColumn2 = Stock' (Column P.PGUuid) (Column P.PGText) (Column P.PGText) (Column ExchangeColumn)
-
 -- stock id, stock symbol, stock description, (exchange name, exchange timezone, exchange offset)
 type StockColumn3 = Stock'
                     (Column P.PGUuid)
                     (Column P.PGText)
                     (Column P.PGText)
                     ((Column P.PGText), (Column P.PGText), (Column P.PGInt4))
+
+type StockColumn4 = (Stock'
+                     (Column P.PGUuid)
+                     (Column P.PGText)
+                     (Column P.PGText)
+                     ExchangeColumn
+                    )
 
 $(makeAdaptorAndInstance "pStock" ''Stock')
 
@@ -75,19 +79,11 @@ stockColumnQuery = T.queryTable stockTable
 
 
 applyExchange' :: StockColumn3
-               -> (Stock'
-                    (Column P.PGUuid)
-                    (Column P.PGText)
-                    (Column P.PGText)
-                    (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4)))
+               -> StockColumn4
 applyExchange' (Stock' stockIdC stockSymbolC stockDescriptionC (exchangeNameC, exchangeTimeZoneC, exchangeTimeZoneOffsetC)) =
   Stock' stockIdC stockSymbolC stockDescriptionC (Exchange' exchangeNameC exchangeTimeZoneC exchangeTimeZoneOffsetC)
 
-stockQuery :: Query (Stock'
-                     (Column P.PGUuid)
-                     (Column P.PGText)
-                     (Column P.PGText)
-                     (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4)))
+stockQuery :: Query StockColumn4
 stockQuery = proc () -> do
   stockRow@(Stock' stockIdC symbolC descriptionC exchangeNameC) <- stockColumnQuery -< ()
   exchangeRow@(Exchange' exchangeNameC' exchangeTimeZoneC exchangeTimeZoneOffsetC) <- exchangeQuery -< ()
@@ -97,11 +93,7 @@ stockQuery = proc () -> do
   returnA -< applyExchange' intermediate
 
 
-stockIdQuery :: UUID -> Query (Stock'
-                               (Column P.PGUuid)
-                               (Column P.PGText)
-                               (Column P.PGText)
-                               (Exchange' (Column P.PGText) (Column P.PGText) (Column P.PGInt4)))
+stockIdQuery :: UUID -> Query StockColumn4
 stockIdQuery stockId = proc () -> do
   stockRow@(Stock' stockIdC symbolC descriptionC exchangeNameC) <- stockColumnQuery -< ()
   restrict -< stockIdC .== (P.pgUUID stockId)
