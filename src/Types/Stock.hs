@@ -2,9 +2,8 @@
 
 module Types.Stock where
 
-import GHC.Generics
-
 import Data.UUID (UUID)
+import GHC.Generics
 
 import Types.Exchange
 

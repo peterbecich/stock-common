@@ -4,7 +4,6 @@ module Types.Tick where
 
 import Data.Time.Clock (UTCTime)
 import Data.UUID
-
 import GHC.Generics
 
 import Types.Stock (Stock)

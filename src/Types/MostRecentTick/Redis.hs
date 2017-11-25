@@ -4,19 +4,15 @@
 module Types.MostRecentTick.Redis where
 
 import Control.Monad
+import Data.Time.Clock
 import Data.Traversable
 import Data.UUID
-import Data.Time.Clock
+import Database.Redis
+import qualified Data.ByteString.Char8 as BS
 import qualified Data.List as L
-
 import qualified Data.Map.Lazy as Map
 
-import qualified Data.ByteString.Char8 as BS
-
-import Database.Redis
-
 import DB.Redis
-
 import qualified Types.Stock as Stock
 import qualified Types.Tick as Tick
 import qualified Types.MostRecentTick as MRT

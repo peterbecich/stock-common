@@ -3,11 +3,9 @@
 module Types.Exchange where
 
 import Data.Time.LocalTime (TimeZone)
-
+import GHC.Generics
 import Opaleye (Column)
 import Opaleye.PGTypes
-
-import GHC.Generics
 
 data Exchange' a b c = Exchange' { name :: a
                              , timeZone :: b

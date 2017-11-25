@@ -5,18 +5,15 @@
 
 module Types.Exchange.JSON where
 
-import Data.Aeson
-import qualified Data.Aeson as Aeson
-
-import Data.Aeson.Types (Parser, parse, parseMaybe)
-import qualified Data.Text as Txt
-import qualified Data.Map as Mp --  (Map, empty, keys)
-import Data.Text.Internal (Text)
-import Data.ByteString.Lazy.Char8 (pack, unpack)
-
-import Data.Time.LocalTime
-
 import Control.Monad
+import Data.Aeson
+import Data.Aeson.Types (Parser, parse, parseMaybe)
+import Data.ByteString.Lazy.Char8 (pack, unpack)
+import Data.Text.Internal (Text)
+import Data.Time.LocalTime
+import qualified Data.Aeson as Aeson
+import qualified Data.Map as Mp
+import qualified Data.Text as Txt
 
 import Types.Exchange
 

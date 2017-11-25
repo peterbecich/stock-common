@@ -15,8 +15,8 @@ import Control.Concurrent (threadDelay)
 import Data.Functor
 import Data.Functor.Identity
 import Data.Int (Int64)
-import Data.Monoid
 import Data.List
+import Data.Monoid
 import Data.Profunctor.Product (p7)
 import Data.Profunctor.Product.Default (def)
 import Data.Profunctor.Product.TH (makeAdaptorAndInstance)

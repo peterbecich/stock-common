@@ -9,10 +9,6 @@ module Types.Stock.Psql where
 
 import Prelude
 
-import Data.Profunctor.Product (p4)
-import Data.Profunctor.Product.Default (def)
-import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
-import Opaleye (Query, Column, Table(Table), required, optional, (.==), (.<), PGInt4, PGFloat8, runQuery, restrict)
 import Control.Arrow (returnA)
 import Control.Monad
 import Data.Char
@@ -20,11 +16,15 @@ import Data.Functor ((<$>), fmap)
 import Data.Int (Int64)
 import Data.Map (Map, empty, size, mapKeys, toList, assocs)
 import Data.Monoid
+import Data.Profunctor.Product (p4)
+import Data.Profunctor.Product.Default (def)
+import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
 import Data.Time.LocalTime
 import Data.UUID
 import Database.PostgreSQL.Simple.Internal (Connection)
-import Opaleye.Manipulation
+import Opaleye (Query, Column, Table(Table), required, optional, (.==), (.<), PGInt4, PGFloat8, runQuery, restrict)
 import Opaleye.Internal.RunQuery
+import Opaleye.Manipulation
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified Opaleye.Constant as C

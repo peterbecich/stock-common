@@ -2,11 +2,9 @@
 
 module Types.MostRecentTick where
 
-import GHC.Generics
-
-import Data.UUID (UUID)
-
 import Data.Time.Clock (UTCTime)
+import Data.UUID (UUID)
+import GHC.Generics
 
 data MostRecentTick = MostRecentTick { stockId :: UUID
                                      , timestamp :: UTCTime

@@ -3,16 +3,13 @@
 
 module Util.LoadStocks where
 
-import qualified Data.ByteString.Lazy as BL
-import Data.Csv
-import qualified Data.Vector as V
-
-import System.Random
-import Data.UUID
-
 import Control.Monad
-
+import Data.Csv
 import Data.Int (Int64)
+import Data.UUID
+import System.Random
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Vector as V
 
 import Types.Stock
 import Types.Exchange

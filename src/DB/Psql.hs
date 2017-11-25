@@ -3,7 +3,6 @@
 module DB.Psql where
 
 import Database.PostgreSQL.Simple
-
 import qualified Data.Yaml.Config as Config
 
 commonFilePath :: FilePath

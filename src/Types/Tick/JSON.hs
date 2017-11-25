@@ -5,23 +5,17 @@
 
 module Types.Tick.JSON where
 
-import Data.Aeson
-import qualified Data.Aeson as Aeson
-
-import Data.Aeson.Types (Parser, parse, parseMaybe)
-
-import qualified Data.Map as Mp --  (Map, empty, keys)
-import Data.Text.Internal (Text)
-import Data.ByteString.Lazy.Char8 (pack, unpack)
-
 import Control.Monad
-
-import Types.Stock
--- import Types.Stock.Psql (bogusStock)
-import Types.Tick
-
+import Data.Aeson
+import Data.Aeson.Types (Parser, parse, parseMaybe)
+import Data.ByteString.Lazy.Char8 (pack, unpack)
+import Data.Text.Internal (Text)
 import Data.Time.Clock
 import Data.Time.LocalTime
+import Types.Stock
+import Types.Tick
+import qualified Data.Aeson as Aeson
+import qualified Data.Map as Mp --  (Map, empty, keys)
 
 instance FromJSON (UTCTime -> Stock -> Tick) where
   parseJSON = withObject "Tick" $ \tick -> do
