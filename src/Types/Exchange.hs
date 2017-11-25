@@ -14,6 +14,5 @@ data Exchange' a b c = Exchange' { name :: a
                              , timeZoneOffset :: c
                              } deriving (Generic, Show)
 
---type Exchange = Exchange' String TimeZone Int
 type Exchange = Exchange' String String Int
 
