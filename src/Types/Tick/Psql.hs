@@ -95,6 +95,7 @@ type TickColumn5 = Tick'
                    (Column P.PGInt4)
                    StockColumn4
 
+type PriceColumn = Column P.PGFloat8
 
 $(makeAdaptorAndInstance "pTick" ''Tick')
 
@@ -170,6 +171,27 @@ stockTicksQuery' stockId = proc () -> do
 
 -- all ticks for a given stock
 stockTicksQuery (Stock' stockId _ _ _) = stockTicksQuery' stockId
+
+stockCloseQuery' :: UUID -> Query PriceColumn
+stockCloseQuery' stockId = proc () -> do
+  (Tick' ts _ _ _ tickCloseC _ (Stock' stockIdC _ _ _)) <- orderBy (desc (\(Tick' ts _ _ _ _ _ _) -> ts)) tickQuery -< ()
+  let sid = P.pgUUID stockId
+  restrict -< sid .== stockIdC
+
+  returnA -< tickCloseC
+
+-- all closing prices for a given stock
+stockCloseQuery (Stock' stockId _ _ _) = stockCloseQuery' stockId
+
+flowersUUID :: UUID
+(Just flowersUUID) = fromString "894e2b04-f806-4e25-a089-bc2fe712e88a"
+
+stockCloseExample :: IO [Double]
+stockCloseExample = do
+  conn <- getPsqlConnection commonFilePath
+  closingPrices <- runQuery conn (stockCloseQuery' flowersUUID)
+  closePsqlConnection conn
+  return closingPrices
 
 
 -- all ticks that match a given stock ID and timestamp
@@ -250,6 +272,4 @@ insertTicksSafe ticks connection = sum <$> mapM f ticks
         (Nothing) -> insertTick tick connection
   
 
--- bogusUUID :: UUID
--- (Just bogusUUID) = fromString "6500a7a7-b839-4591-9c79-f908d6c46386"
 
