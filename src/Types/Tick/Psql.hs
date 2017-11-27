@@ -172,6 +172,7 @@ stockTicksQuery' stockId = proc () -> do
 -- all ticks for a given stock
 stockTicksQuery (Stock' stockId _ _ _) = stockTicksQuery' stockId
 
+-- all closing prices for a given stock
 stockCloseQuery' :: UUID -> Query PriceColumn
 stockCloseQuery' stockId = proc () -> do
   (Tick' ts _ _ _ tickCloseC _ (Stock' stockIdC _ _ _)) <- orderBy (desc (\(Tick' ts _ _ _ _ _ _) -> ts)) tickQuery -< ()
@@ -182,6 +183,11 @@ stockCloseQuery' stockId = proc () -> do
 
 -- all closing prices for a given stock
 stockCloseQuery (Stock' stockId _ _ _) = stockCloseQuery' stockId
+
+getStockClose :: Connection -> UUID -> IO [Double]
+getStockClose psqlConn stockId =
+  runQuery psqlConn (stockCloseQuery' stockId)
+
 
 flowersUUID :: UUID
 (Just flowersUUID) = fromString "894e2b04-f806-4e25-a089-bc2fe712e88a"
