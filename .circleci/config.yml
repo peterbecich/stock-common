@@ -1,31 +1,16 @@
-version: 2
+version: 1
 # https://gist.github.com/dbp/bef96402ea07001dfed2
 dependencies:
   cache_directories:
     - "~/.stack"
   pre:
-    - wget https://github.com/commercialhaskell/stack/releases/download/v1.5.1/stack-1.5.1-linux-x86_64.tar.gz -O /tmp/stack.gz
-    - mkdir /tmp/stack/
-    - tar -xvzf /tmp/stack.tar.gz -C /tmp/stack/
-    - sudo mv /tmp/stack/stack-1.2.0-linux-x86_64/stack /usr/bin/stack
+    - wget https://github.com/commercialhaskell/stack/releases/download/v0.1.2.0/stack-0.1.2.0-x86_64-linux.gz -O /tmp/stack.gz
+    - gunzip /tmp/stack.gz && chmod +x /tmp/stack
+    - sudo mv /tmp/stack /usr/bin/stack
   override:
-    - stack setup --no-terminal
-    - stack build -- no-system-ghc --only-configure --no-terminal
-
-
-compile:
-  override:
-    - stack build --no-terminal
+    - stack setup
+    - stack build
 
 test:
   override:
-    - stack build --no-terminal
-    
-# jobs:
-#   build:
-#     docker:
-#       - image: debian:stretch
-#     steps:
-#       - checkout
-#       - run: compile
-#       - run: test
+    - stack test
