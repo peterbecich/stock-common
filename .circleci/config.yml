@@ -1,12 +1,14 @@
 # https://gist.github.com/dbp/bef96402ea07001dfed2
 # https://circleci.com/docs/2.0/hello-world/
-# https://circleci.com/docs/1.0/config-sample/
+# https://circleci.com/docs/2.0/configuration-reference/
 
 version: 2
 jobs:
    build:
      docker:
-       - image: circleci/build-image:latest
+       #- image: circleci/build-image:latest
+       - image: ubuntu:14.04
      steps:
        - checkout
        - run: echo "hello world"
+       - run: stack build
