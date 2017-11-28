@@ -10,6 +10,6 @@ jobs:
        #- image: ubuntu:14.04
      steps:
        - checkout
-       - run: echo "hello world"
+       - run: sudo apt-get install xz-utils make
        - run: stack setup --no-terminal
        - run: stack build --only-configure --no-terminal
