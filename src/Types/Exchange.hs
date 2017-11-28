@@ -14,3 +14,4 @@ data Exchange' a b c = Exchange' { name :: a
 
 type Exchange = Exchange' String String Int
 
+instance (Eq a, Eq b, Eq c) => Eq (Exchange' a b c)

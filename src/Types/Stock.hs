@@ -15,6 +15,7 @@ data Stock' a b c d = Stock' { stockId :: a
 
 type Stock = Stock' UUID String String Exchange
 
+instance (Eq a, Eq b, Eq c, Eq d) => Eq (Stock' a b c d)
 
 applyExchange :: Stock' UUID String String (String, String, Int)
               -> Stock
