@@ -83,6 +83,7 @@ applyExchange' :: StockColumn3
 applyExchange' (Stock' stockIdC stockSymbolC stockDescriptionC (exchangeNameC, exchangeTimeZoneC, exchangeTimeZoneOffsetC)) =
   Stock' stockIdC stockSymbolC stockDescriptionC (Exchange' exchangeNameC exchangeTimeZoneC exchangeTimeZoneOffsetC)
 
+-- all stocks
 stockQuery :: Query StockColumn4
 stockQuery = proc () -> do
   stockRow@(Stock' stockIdC symbolC descriptionC exchangeNameC) <- stockColumnQuery -< ()
