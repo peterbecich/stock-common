@@ -1,20 +1,15 @@
 # https://gist.github.com/dbp/bef96402ea07001dfed2
 # https://circleci.com/docs/2.0/hello-world/
 # https://circleci.com/docs/2.0/configuration-reference/
-
+# https://hub.docker.com/_/haskell/
 version: 2
 jobs:
    build:
      docker:
-       - image: circleci/build-image:latest
+       - image: haskell:latest
        #- image: ubuntu:14.04
      steps:
        - checkout
        - run: echo "hello world"
-       - run: sudo apt-get install libgmp-dev
-       - run: wget https://github.com/commercialhaskell/stack/releases/download/v1.5.1/stack-1.5.1-linux-x86_64.tar.gz -O /tmp/stack.tar.gz
-       - run: mkdir /tmp/stack/
-       - run: tar -xvzf /tmp/stack.tar.gz -C /tmp/stack
-       - run: sudo mv /tmp/stack/stack-1.5.1-linux-x86_64/stack /usr/bin/stack
        - run: stack setup --no-terminal
-       - run: stack build --no-system-ghc --only-configure --no-terminal
+       - run: stack build --only-configure --no-terminal
