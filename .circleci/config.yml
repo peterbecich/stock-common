@@ -21,11 +21,11 @@ test:
   override:
     - stack build --no-terminal
     
-jobs:
-  build:
-    docker:
-      - image: debian:stretch
-    steps:
-      - checkout
-      - run: compile
-      - run: test
+# jobs:
+#   build:
+#     docker:
+#       - image: debian:stretch
+#     steps:
+#       - checkout
+#       - run: compile
+#       - run: test
