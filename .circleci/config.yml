@@ -6,8 +6,9 @@ version: 2
 jobs:
    build:
      docker:
-       - image: haskell:8.0.2
+       #- image: haskell:8.0.2
        #- image: ubuntu:14.04
+       - image: peterbecich/haskell-stack:0.0.1
      steps:
        - checkout
        - run: stack setup --no-terminal
