@@ -4,10 +4,13 @@
 module DB.Psql where
 
 import Control.Monad (return)
+import Data.Int (Int64)
 import Data.Profunctor.Product.Default
+import Opaleye.Manipulation (runInsertMany)
 import Opaleye.RunQuery (runQuery)
 import Opaleye.Internal.RunQuery (QueryRunner)
 import Opaleye.Internal.QueryArr (Query)
+import Opaleye.Internal.Table
 import qualified Data.Pool as Pool
 import qualified Data.Yaml.Config as Config
 import qualified Database.PostgreSQL.Simple as PSQL
@@ -63,7 +66,16 @@ createPostgresPool filePath = do
   
   
 runQueryPool :: Default QueryRunner cols vals
-             => Pool.Pool PSQL.Connection
+             => PostgresPool
              -> Query cols
              -> IO [vals]
 runQueryPool pool query = Pool.withResource pool (\conn -> runQuery conn query)
+
+runInsertPool :: PostgresPool
+              -> Table columns columns'
+              -> [columns]
+              -> IO Int64
+runInsertPool pool table columns =
+  Pool.withResource pool (\conn -> runInsertMany conn table columns)
+
+  

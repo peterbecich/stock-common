@@ -184,10 +184,9 @@ stockCloseQuery' stockId = proc () -> do
 -- all closing prices for a given stock
 stockCloseQuery (Stock' stockId _ _ _) = stockCloseQuery' stockId
 
-getStockClose :: Connection -> UUID -> IO [Double]
-getStockClose psqlConn stockId =
-  runQuery psqlConn (stockCloseQuery' stockId)
-
+getStockClose :: PostgresPool -> UUID -> IO [Double]
+getStockClose pool stockId =
+  runQueryPool pool (stockCloseQuery' stockId)
 
 flowersUUID :: UUID
 (Just flowersUUID) = fromString "894e2b04-f806-4e25-a089-bc2fe712e88a"
@@ -238,13 +237,15 @@ tickToPostgres (Tick' utc open high low close volume (Stock' stockId _ _ _)) = l
      (P.pgInt4 volume)
      (P.pgUUID stockId)
 
-insertTick :: Tick -> Connection -> IO Int64
-insertTick tick connection =
-  runInsert connection tickTable (tickToPostgres tick)
+-- entire transaction fails when duplicate tick inserted
 
-insertTicks :: [Tick] -> Connection -> IO Int64
-insertTicks ticks connection =
-  runInsertMany connection tickTable (tickToPostgres <$> ticks)
+insertTick :: PostgresPool -> Tick -> IO Int64
+insertTick pool tick =
+  runInsertPool pool tickTable [(tickToPostgres tick)]
+
+insertTicks :: PostgresPool -> [Tick] -> IO Int64
+insertTicks pool ticks =
+  runInsertPool pool tickTable (tickToPostgres <$> ticks)
 
 -- Eventual solution to inserting duplicate ticks
 -- https://www.postgresql.org/docs/current/static/sql-insert.html
@@ -262,12 +263,12 @@ insertTicks ticks connection =
 --       in runInsertMany connection tickTable (tickToPostgres <$> newerTicks)      
 --     _ -> runInsertMany connection tickTable (tickToPostgres <$> ticks)      
 
-insertTicksSafe :: [Tick] -> Connection -> IO Int64
-insertTicksSafe ticks connection = sum <$> mapM f ticks
+insertTicksSafe :: PostgresPool -> [Tick] -> IO Int64
+insertTicksSafe pool ticks = sum <$> mapM f ticks
   where
     f :: Tick -> IO Int64
     f tick = do
-      ticks <- runQuery connection (stockTickQuery tick)
+      ticks <- runQueryPool pool (stockTickQuery tick)
       let
         mDuplicateTick :: Maybe Tick
         mDuplicateTick = find (\tick' -> (stockId (stock tick')) == (stockId (stock tick))
@@ -275,7 +276,9 @@ insertTicksSafe ticks connection = sum <$> mapM f ticks
                               ) ticks
       case mDuplicateTick of
         (Just duplicateTick) -> return 0 -- tick already in DB
-        (Nothing) -> insertTick tick connection
+        (Nothing) -> insertTick pool tick
   
+
+
 
 
