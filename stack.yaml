@@ -1,5 +1,5 @@
 
-resolver: lts-9.13
+resolver: lts-9.17
 
 packages:
 - .
@@ -20,7 +20,7 @@ docker:
 image:
   containers:
     -
-      base: "fpco/stack-build:lts-9.13"
+      base: "fpco/stack-build:lts-9.17"
       name: "peterbecich/stock-common"
 
       add:

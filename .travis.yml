@@ -10,7 +10,7 @@ cache:
   - /var/lib/docker
 
 before_install:
-  - docker pull fpco/stack-build:lts-9.13
+  - docker pull fpco/stack-build:lts-9.17
   
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
