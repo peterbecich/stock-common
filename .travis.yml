@@ -7,8 +7,10 @@ services:
 cache:
   directories:
   - $HOME/.stack
+  - /var/lib/docker
 
 before_install:
+  - docker pull fpco/stack-build:lts-9.13
   
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
@@ -18,13 +20,6 @@ before_install:
 
 script:
   - stack build
-
-# addons:
-#   apt:
-#     sources:
-#     - hvr-ghc
-#     packages:
-#     - ghc
 
 # https://gist.github.com/petrbel/c3bf7e0f59c22a52f534
 git:
