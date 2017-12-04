@@ -11,6 +11,7 @@ import Opaleye.RunQuery (runQuery)
 import Opaleye.Internal.RunQuery (QueryRunner)
 import Opaleye.Internal.QueryArr (Query)
 import Opaleye.Internal.Table
+import System.Environment (getEnv)
 import qualified Data.Pool as Pool
 import qualified Data.Yaml.Config as Config
 import qualified Database.PostgreSQL.Simple as PSQL
@@ -26,13 +27,18 @@ getConnInfo filePath = do
   postgres <- Config.subconfig "postgres" db
   dbname <- Config.lookup "dbname" postgres
   user <- Config.lookup "user" postgres
-  password <- Config.lookup "password" postgres
+  -- password <- Config.lookup "password" postgres
+  password <- getPsqlPassword
   ip <- Config.lookup "ip" postgres
   port <- Config.lookup "port" postgres
   let
     connInfo :: PSQL.ConnectInfo
     connInfo = PSQL.ConnectInfo ip port user password dbname
   return connInfo
+
+-- https://hackage.haskell.org/package/base-4.10.0.0/docs/System-Environment.html
+getPsqlPassword :: IO String
+getPsqlPassword = getEnv "POSTGRES_PASSWORD"
 
 getPsqlConnection :: FilePath -> IO PSQL.Connection
 getPsqlConnection filePath = do
@@ -41,7 +47,8 @@ getPsqlConnection filePath = do
   postgres <- Config.subconfig "postgres" db
   dbname <- Config.lookup "dbname" postgres
   user <- Config.lookup "user" postgres
-  password <- Config.lookup "password" postgres
+  --password <- Config.lookup "password" postgres
+  password <- getPsqlPassword
   ip <- Config.lookup "ip" postgres
   port <- Config.lookup "port" postgres
   let

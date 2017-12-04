@@ -3,6 +3,7 @@
 module DB.Redis where
 
 import Data.Functor
+import System.Environment (getEnv)
 import qualified Network.Socket as Sock (PortNumber)
 import qualified Data.Pool as Pool
 import qualified Database.Redis as Redis
@@ -11,6 +12,10 @@ import qualified Data.Yaml.Config as Config
 -- TODO store this constant in one place
 commonFilePath :: FilePath
 commonFilePath = "conf/common.yaml"
+
+-- https://hackage.haskell.org/package/base-4.10.0.0/docs/System-Environment.html
+getRedisPassword :: IO String
+getRedisPassword = getEnv "REDIS_PASSWORD"
 
 getRedisConnectInfo :: FilePath -> IO Redis.ConnectInfo
 getRedisConnectInfo filePath = do
