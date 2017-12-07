@@ -25,3 +25,8 @@ image:
 
       add:
         conf/: /usr/local/etc/
+        data/: /usr/local/data/
+      entrypoints:
+        - load-stocks
+      executables:
+        - load-stocks

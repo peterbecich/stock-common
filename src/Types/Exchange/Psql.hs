@@ -24,6 +24,7 @@ import Database.PostgreSQL.Simple.Internal (Connection)
 import Opaleye ( Query, Column, Table(Table), required, optional, (.==), (.<), runQuery, restrict)
 import Opaleye.Internal.TableMaker (tableColumn)
 import Opaleye.Manipulation
+import qualified Data.Pool as Pool
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified Opaleye.Constant as C
@@ -101,9 +102,11 @@ amex = Exchange' "AMEX" "US/Eastern" (-300)
   
 exchanges = [nasdaq, nyse, amex]
 
-insertExchangeIO :: Exchange -> IO ()
-insertExchangeIO exchange = do
-  conn <- getPsqlConnection commonFilePath
-  rows <- (insertExchange exchange conn)
-  closePsqlConnection conn
+-- insertExchangeIO :: Exchange -> IO ()
+-- insertExchangeIO exchange = do
+--   conn <- getPsqlConnection commonFilePath
+--   rows <- (insertExchange exchange conn)
+--   closePsqlConnection conn
+
+
 

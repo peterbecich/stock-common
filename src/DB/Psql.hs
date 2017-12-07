@@ -18,7 +18,7 @@ import qualified Database.PostgreSQL.Simple as PSQL
 import qualified Opaleye.Internal.QueryArr as OE (Query)
 
 commonFilePath :: FilePath
-commonFilePath = "conf/common.yaml"
+commonFilePath = "/usr/local/etc/common.yaml"
 
 getConnInfo :: FilePath -> IO PSQL.ConnectInfo
 getConnInfo filePath = do
@@ -82,7 +82,7 @@ runInsertPool :: PostgresPool
               -> Table columns columns'
               -> [columns]
               -> IO Int64
-runInsertPool pool table columns =
-  Pool.withResource pool (\conn -> runInsertMany conn table columns)
+runInsertPool pool table rows =
+  Pool.withResource pool (\conn -> runInsertMany conn table rows)
 
   
