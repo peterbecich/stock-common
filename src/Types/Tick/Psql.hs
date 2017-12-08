@@ -154,8 +154,8 @@ stockTicksQuery' stockId = proc () -> do
 stockTicksQuery (Stock' stockId _ _ _) = stockTicksQuery' stockId
 
 
-stockTickCountQuery :: UUID -> Query Int
-stockTickCountQuery stockId = length <$> (stockTicksQuery' stockId)
+-- stockTickCountQuery :: UUID -> Query Int
+-- stockTickCountQuery stockId = length <$> (stockTicksQuery' stockId)
 
 -- all closing prices for a given stock
 stockCloseQuery' :: UUID -> Query PriceColumn
