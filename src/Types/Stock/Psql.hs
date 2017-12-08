@@ -93,7 +93,6 @@ stockQuery = proc () -> do
   
   returnA -< applyExchange' intermediate
 
-
 stockIdQuery :: UUID -> Query StockColumn4
 stockIdQuery stockId = proc () -> do
   stockRow@(Stock' stockIdC symbolC descriptionC exchangeNameC) <- stockColumnQuery -< ()
@@ -105,20 +104,17 @@ stockIdQuery stockId = proc () -> do
   
   returnA -< applyExchange' intermediate
 
+-- see TutorialBasic.lhs
+-- stocksWithTicksQuery :: Query StockColumn4
+-- stocksWithTicksQuery = proc () -> do
+--   stock <- stockQuery -< ()
+  -- restrict -< undefined
+
 getStock :: UUID -> Connection -> IO [Stock]
 getStock stockId conn = runQuery conn (stockIdQuery stockId)
 
 getStocks :: Connection -> IO [Stock]
 getStocks conn = runQuery conn stockQuery
-
-stockExample :: IO [Stock' UUID String String Exchange]
-stockExample = do
-  conn <- getPsqlConnection commonFilePath
-  stocks <- runQuery conn stockQuery
-  closePsqlConnection conn
-  return (take 10 stocks)
-
-printStocks = stockExample >>= mapM_ (putStrLn . show)
 
 stockToPsql :: Stock -> StockColumn
 stockToPsql stock = Stock'

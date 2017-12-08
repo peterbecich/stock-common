@@ -141,25 +141,6 @@ tickQuery = proc () -> do
 recentTickQuery :: Query TickColumn5
 recentTickQuery = orderBy (desc (\(Tick' ts _ _ _ _ _ _) -> ts)) tickQuery
 
-tickExample :: IO [Tick]
-tickExample = do
-  conn <- getPsqlConnection commonFilePath
-  ticks <- runQuery conn tickQuery
-  closePsqlConnection conn
-  return (take 10 ticks)
-                   
-printTicks = tickExample >>= mapM_ (putStrLn . show)
-
-
-recentTickExample :: IO [Tick]
-recentTickExample = do
-  conn <- getPsqlConnection commonFilePath
-  ticks <- runQuery conn recentTickQuery
-  closePsqlConnection conn
-  return (take 100 ticks)
-                   
-printRecentTicks = recentTickExample >>= mapM_ (putStrLn . show)
-
 -- all ticks for a given stock
 stockTicksQuery' :: UUID -> Query TickColumn5
 stockTicksQuery' stockId = proc () -> do
@@ -171,6 +152,10 @@ stockTicksQuery' stockId = proc () -> do
 
 -- all ticks for a given stock
 stockTicksQuery (Stock' stockId _ _ _) = stockTicksQuery' stockId
+
+
+stockTickCountQuery :: UUID -> Query Int
+stockTickCountQuery stockId = length <$> (stockTicksQuery' stockId)
 
 -- all closing prices for a given stock
 stockCloseQuery' :: UUID -> Query PriceColumn
@@ -187,17 +172,6 @@ stockCloseQuery (Stock' stockId _ _ _) = stockCloseQuery' stockId
 getStockClose :: PostgresPool -> UUID -> IO [Double]
 getStockClose pool stockId =
   runQueryPool pool (stockCloseQuery' stockId)
-
-flowersUUID :: UUID
-(Just flowersUUID) = fromString "894e2b04-f806-4e25-a089-bc2fe712e88a"
-
-stockCloseExample :: IO [Double]
-stockCloseExample = do
-  conn <- getPsqlConnection commonFilePath
-  closingPrices <- runQuery conn (stockCloseQuery' flowersUUID)
-  closePsqlConnection conn
-  return closingPrices
-
 
 -- all ticks that match a given stock ID and timestamp
 stockTickQuery' :: UUID -> UTCTime -> Query TickColumn5
