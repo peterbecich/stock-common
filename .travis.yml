@@ -9,6 +9,7 @@ cache:
   bundler: true
   directories:
   - $HOME/.stack
+  - $HOME/build/peterbecich/stock-common/.stack-work
   #- /var/lib/docker
   - $HOME/docker  #https://github.com/travis-ci/travis-ci/issues/5358#issuecomment-248915326
 
