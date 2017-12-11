@@ -35,6 +35,11 @@ before_install:
   - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
   - stack setup
 
+# install:
+#   - git clone git@github.com:${TRAVIS_REPO_SLUG}.git $TRAVIS_REPO_SLUG
+#   - cd $TRAVIS_REPO_SLUG
+#   - git checkout -qf $TRAVIS_COMMIT
+  
 script:
   - stack build
   - stack image container
@@ -42,10 +47,9 @@ script:
 # https://gist.github.com/petrbel/c3bf7e0f59c22a52f534
 git:
   submodules: false
-
-
   
 after_success:
+  
   - echo "success; run merge_script.sh"
   - ./scripts/merge_script.sh
 
