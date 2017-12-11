@@ -5,6 +5,7 @@ services:
 
 # Caching so the next build will be fast too.
 cache:
+  timeout: 600
   bundler: true
   directories:
   - $HOME/.stack
