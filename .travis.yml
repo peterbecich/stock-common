@@ -10,6 +10,17 @@ cache:
   - /var/lib/docker
 
 before_install:
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  - sudo apt-get update
+  - sudo apt-get -y install docker-ce
+
+  - eval "$(ssh-agent -s)" #start the ssh agent
+
+  - openssl aes-256-cbc -K $encrypted_6c7819373136_key -iv $encrypted_6c7819373136_iv -in travis_common_push_github.enc -out travis_common_push_github -d
+  - chmod 600 travis_common_push_github
+  - ssh-add travis_common_push_github
+  
   - docker pull fpco/stack-build:lts-9.17
   
   # Download and unpack the stack executable
@@ -20,6 +31,7 @@ before_install:
 
 script:
   - stack build
+  - stack image container
 
 # https://gist.github.com/petrbel/c3bf7e0f59c22a52f534
 git:
