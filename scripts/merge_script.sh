@@ -11,4 +11,7 @@ fi
 
 if [ "$TRAVIS_BRANCH" == "production" ]; then
     echo "CI build of production branch successful"
+    docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+    echo "logged into Docker Hub"
+    docker push peterbecich/stock-common
 fi
