@@ -15,7 +15,7 @@ ghc-options:
 
 
 docker:
-  enable: false
+  enable: true
 
 image:
   containers:
