@@ -5,15 +5,20 @@ services:
 
 # Caching so the next build will be fast too.
 cache:
+  bundler: true
   directories:
   - $HOME/.stack
-  - /var/lib/docker
+  #- /var/lib/docker
+  - $HOME/docker  #https://github.com/travis-ci/travis-ci/issues/5358#issuecomment-248915326
 
 before_install:
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   - sudo apt-get update
   - sudo apt-get -y install docker-ce
+
+  # Load cached docker images
+  - if [[ -d $HOME/docker ]]; then ls $HOME/docker/*.tar.gz | xargs -I {file} sh -c "zcat {file} | docker load"; fi
 
   - eval "$(ssh-agent -s)" #start the ssh agent
 
@@ -37,6 +42,14 @@ script:
 git:
   submodules: false
 
+
+  
 after_success:
   - echo "success; run merge_script.sh"
   - ./scripts/merge_script.sh
+
+before_cache:
+  # Save tagged docker images
+  - >
+    mkdir -p $HOME/docker && docker images -a --filter='dangling=false' --format '{{.Repository}}:{{.Tag}} {{.ID}}'
+    | xargs -n 2 -t sh -c 'test -e $HOME/docker/$1.tar.gz || docker save $0 | gzip -2 > $HOME/docker/$1.tar.gz'
