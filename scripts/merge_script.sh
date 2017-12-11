@@ -3,7 +3,7 @@
 echo "merge_script.sh"
 if [ "$TRAVIS_BRANCH" == "master" ]; then
     echo "merge into production"
-
+    git fetch --all
     git checkout production || exit
     git merge "$TRAVIS_COMMIT" || exit
     git push origin production || exit
