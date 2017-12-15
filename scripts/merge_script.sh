@@ -9,7 +9,7 @@ if [ "$TRAVIS_BRANCH" == "master" ]; then
     echo "merge into production; check out deep repo"
     # https://stackoverflow.com/a/32580822/1007926
     echo "git clone git@github.com:${TRAVIS_REPO_SLUG}.git"
-    git clone git@gituhb.com:${TRAVIS_REPO_SLUG}.git $TRAVIS_REPO_SLUG
+    git clone git@github.com:${TRAVIS_REPO_SLUG}.git $TRAVIS_REPO_SLUG
     cd $TRAVIS_REPO_SLUG
     echo "git checkout -qf $TRAVIS_COMMIT"
     git checkout -qf $TRAVIS_COMMIT
