@@ -1,11 +1,15 @@
 #https://reformatcode.com/code/git/automatic-merge-branch-into-master-on-sucessful-build-in-travis
 
 echo "merge_script.sh"
+
+echo "disk free"
+df -h
+
 if [ "$TRAVIS_BRANCH" == "master" ]; then
     echo "merge into production; check out deep repo"
     # https://stackoverflow.com/a/32580822/1007926
     echo "git clone git@github.com:${TRAVIS_REPO_SLUG}.git"
-    git clone git@github.com:${TRAVIS_REPO_SLUG}.git $TRAVIS_REPO_SLUG
+    git clone git@gituhb.com:${TRAVIS_REPO_SLUG}.git $TRAVIS_REPO_SLUG
     cd $TRAVIS_REPO_SLUG
     echo "git checkout -qf $TRAVIS_COMMIT"
     git checkout -qf $TRAVIS_COMMIT
@@ -13,7 +17,8 @@ if [ "$TRAVIS_BRANCH" == "master" ]; then
     git checkout production || exit
     echo "git merge $TRAVIS_COMMIT"
     git merge "$TRAVIS_COMMIT" || exit
-    git push origin production || exit
+    echo "git push origin production"
+    # git push origin production || exit
 fi
 
 if [ "$TRAVIS_BRANCH" == "production" ]; then

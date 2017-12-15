@@ -14,6 +14,7 @@ cache:
   - $HOME/docker  #https://github.com/travis-ci/travis-ci/issues/5358#issuecomment-248915326
 
 before_install:
+  - df -h
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   - sudo apt-get update
@@ -41,14 +42,18 @@ before_install:
   - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
   - stack setup
 
+  - df -h
+
 # install:
 #   - git clone git@github.com:${TRAVIS_REPO_SLUG}.git $TRAVIS_REPO_SLUG
 #   - cd $TRAVIS_REPO_SLUG
 #   - git checkout -qf $TRAVIS_COMMIT
   
 script:
+  - df -h
   - stack build
   - stack image container
+  - df -h
 
 # https://gist.github.com/petrbel/c3bf7e0f59c22a52f534
 git:
@@ -56,8 +61,8 @@ git:
   
 after_success:
   
-  # - echo "success; run merge_script.sh"
-  # - ./scripts/merge_script.sh
+  - echo "success; run merge_script.sh"
+  - ./scripts/merge_script.sh
 
 before_cache:
   # Save tagged docker images
