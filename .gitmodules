@@ -1,0 +1,3 @@
+[submodule "stock-ops"]
+	path = stock-ops
+	url = https://github.com/peterbecich/stock-ops.git

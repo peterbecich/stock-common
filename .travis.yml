@@ -33,6 +33,8 @@ before_install:
 
   - chmod 600 travis_common_push_github
   - ssh-add travis_common_push_github
+
+  - git submodule update --init --recursive
   
   - docker pull fpco/stack-build:lts-9.17
   
@@ -44,25 +46,18 @@ before_install:
 
   - df -h
 
-# install:
-#   - git clone git@github.com:${TRAVIS_REPO_SLUG}.git $TRAVIS_REPO_SLUG
-#   - cd $TRAVIS_REPO_SLUG
-#   - git checkout -qf $TRAVIS_COMMIT
   
 script:
   - df -h
   - stack build
   - stack image container
   - df -h
-
+  - echo "run merge.sh"  # This should not run if script fails earlier
+  - ./stock-ops/travis/merge.sh
+  
 # https://gist.github.com/petrbel/c3bf7e0f59c22a52f534
 git:
   submodules: false
-  
-after_success:
-  
-  - echo "success; run merge_script.sh"
-  - ./scripts/merge_script.sh
 
 before_cache:
   # Save tagged docker images
