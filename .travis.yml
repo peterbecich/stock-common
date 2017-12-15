@@ -10,7 +10,7 @@ cache:
   directories:
   - $HOME/.stack
   - $HOME/build/peterbecich/stock-common/.stack-work
-  #- /var/lib/docker
+  - /var/lib/docker
   - $HOME/docker  #https://github.com/travis-ci/travis-ci/issues/5358#issuecomment-248915326
 
 before_install:
@@ -25,6 +25,8 @@ before_install:
 
   - eval "$(ssh-agent -s)" #start the ssh agent
 
+  - pwd
+  
   - openssl aes-256-cbc -K $encrypted_6c7819373136_key -iv $encrypted_6c7819373136_iv -in travis_common_secrets.tar.enc -out travis_common_secrets.tar -d
   - tar xvf travis_common_secrets.tar
 
@@ -33,6 +35,9 @@ before_install:
 
   - chmod 600 travis_common_push_github
   - ssh-add travis_common_push_github
+
+  - pwd
+  - ls
 
   - git submodule update --init --recursive
   
@@ -54,7 +59,7 @@ script:
   - df -h
   - echo "run merge.sh"  # This should not run if script fails earlier
   # https://stackoverflow.com/a/43953433/1007926
-  - export GIT_SSH_COMMAND='ssh -i travis_common_push_github'
+  - export GIT_SSH_COMMAND='ssh -i ~/travis_common_push_github'
   - ./stock-ops/travis/merge.sh
   
 # https://gist.github.com/petrbel/c3bf7e0f59c22a52f534
