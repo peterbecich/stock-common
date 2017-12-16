@@ -27,14 +27,14 @@ before_install:
 
   - pwd
   
-  - openssl aes-256-cbc -K $encrypted_6c7819373136_key -iv $encrypted_6c7819373136_iv -in travis_common_secrets.tar.enc -out travis_common_secrets.tar -d
-  - tar xvf travis_common_secrets.tar
-
-  - chmod 600 travis_common
-  - ssh-add travis_common
+  - openssl aes-256-cbc -K $encrypted_3d9371030a25_key -iv $encrypted_3d9371030a25_iv -in stock-common_secrets.tar.enc -out stock-common_secrets.tar -d
+  - tar xvf travis-common_secrets.tar
 
   - chmod 600 travis_common_push_github
   - ssh-add travis_common_push_github
+
+  - chmod 600 travis_common
+  - ssh-add travis_common
 
   - pwd
   - ls
