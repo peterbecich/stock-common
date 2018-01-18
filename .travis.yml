@@ -41,7 +41,7 @@ before_install:
 
   - git submodule update --init --recursive
   
-  - docker pull fpco/stack-build:lts-9.17
+  - docker pull fpco/stack-build:lts-10.3
   
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin

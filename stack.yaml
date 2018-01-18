@@ -1,5 +1,6 @@
 
-resolver: lts-9.17
+# resolver: lts-9.17
+resolver: lts-10.3
 
 packages:
 - .
@@ -10,8 +11,8 @@ flags: {}
 
 extra-package-dbs: []
 
-ghc-options:
-  "*": -j -threaded
+# ghc-options:
+#   "*": -j -threaded
 
 
 docker:
@@ -20,7 +21,8 @@ docker:
 image:
   containers:
     -
-      base: "fpco/stack-build:lts-9.17"
+      # base: "fpco/stack-build:lts-9.17"
+      base: "fpco/stack-build:lts-10.3"
       name: "peterbecich/stock-common"
 
       add:
